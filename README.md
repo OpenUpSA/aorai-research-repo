@@ -1,6 +1,6 @@
-# React Starter
+# AORAI Policy Map
 
-A basic React Starter project with Tailwind CSS and Parcel.
+The African Observatory on Responsible AI Policy Map 
 
 ## Install
 

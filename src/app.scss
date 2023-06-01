@@ -1,3 +1,143 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@0,300;0,500;0,600;1,700&display=swap');
+
+$primary: #005450;
+$grey: #f3f4f3;
+
+@import "~bootstrap/scss/bootstrap";
+
+body {
+    margin: 0;
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 300;
+    font-size: 12px;
+    background: url('bg.webp') repeat;
+}
+
+body.bg {
+    background: url('bg.webp') repeat;
+}
+
+.policy-map {
+    height: 100vh; 
+    width: 100%;
+    position: relative;
+}
+
+.map-container {
+    height: 100%; 
+    width: 100%; 
+}
+
+.leaflet-container {
+    background: transparent !important;
+}
+
+// Controls
+.controls-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 400;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: unset !important;
+    color: unset !important;
+}
+
+.accordion-button:focus {
+    box-shadow: none !important;
+}
+
+.accordion-header button {
+    font-size: 0.9rem;
+    padding: 0.8rem;
+}
+
+.accordion-header button svg {
+    margin-right: 1em;
+}
+
+.accordion-body h2, .data-card h2 {
+    font-size: 1rem;
+    color: #0d201f;
+}
+
+.recently-published {
+    background-color: #f3f4f2;
+}
+
+.recently-published h4 {
+    color: #333;
+    font-size: 1em !important;
+}
+
+.recently-published h4 a {
+    color: #333;
+    text-decoration: none;
+}
+
+.recently-published label {
+    color: #999;
+    font-size: 1rem;
+}
+
+.list-item-bg {
+    background-color: #f3f4f3;
+}
+
+// LEAFLET 
+
+.leaflet-tooltip {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    text-align: center;
+}
+
+.country-label {
+    font-weight: 500;
+    font-size: 9px;
+}
+
+.policy-count {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    text-align: center;
+    display: inline-block;
+    padding: 0 0.4em;
+}
+
+// ScrollAreas
+
+.scrollarea {
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    padding: 0 12px 0 0;
+}
+
+.scrollarea::-webkit-scrollbar {
+    width: 6px;
+    transform: translateX(10px);
+}
+
+.scrollarea::-webkit-scrollbar-track {
+    border-radius: 5px;
+    background-color: #eee;
+}
+
+.scrollarea::-webkit-scrollbar-thumb {
+    border-radius: 5px;
+    background-color: #ccc;
+}
+
+.always-visible-popup {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+.bar-chart-label, .bar-chart-value {
+    font-size: 1em;
+}
