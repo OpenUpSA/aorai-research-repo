@@ -172,7 +172,7 @@ function Map() {
     }, [selectedPolicyAreas]);
 
 
-    getPolicyCount = (iso_code) => {
+    const getPolicyCount = (iso_code) => {
 
         if(filteredData[iso_code]) {
             return filteredData[iso_code].length;
@@ -182,7 +182,7 @@ function Map() {
 
     }
 
-    selectPolicy = (e) => {
+    const selectPolicy = (e) => {
 
         let policy = e.target.value;
         let checked = e.target.checked;
@@ -196,7 +196,7 @@ function Map() {
 
     }
 
-    itemsCount = (data) => {
+    const itemsCount = (data) => {
         
         let policyCount = 0;
 
@@ -212,14 +212,14 @@ function Map() {
     
 
 
-    toggleAllPolicyAreas = (e) => {
+    const toggleAllPolicyAreas = (e) => {
 
         return;
 
     }
 
 
-    updateTooltips = () => {
+    const updateTooltips = () => {
 
         Object.keys(filteredData).forEach(key=>{
             let tooltip = document.getElementById('iso-' + key);
@@ -292,7 +292,7 @@ function Map() {
 
     // },[showTable]);
 
-    updateBarChart = () => {
+    const updateBarChart = () => {
 
         let activePolicyAreas = [];
 
@@ -318,7 +318,7 @@ function Map() {
 
     
 
-    style = (feature) => {
+    const style = (feature) => {
 
         const scale = (value) => {
             
@@ -347,7 +347,7 @@ function Map() {
    
 
 
-    onEachFeature = (feature, layer) => {
+    const onEachFeature = (feature, layer) => {
         if (feature) {
 
             if (africanCountries.map(country => country.iso_code).includes(feature.id)) {
@@ -522,7 +522,7 @@ function Map() {
                                                 <Col className="pe-1">
                                                     <Button className="rounded-0 w-100" size="sm" variant={showSection == 'map' ? 'primary' : 'light'} onClick={() => setShowSection('map')}>Map</Button>
                                                 </Col>
-                                                <Col className="ps-1">
+                                                <Col className="px-1">
                                                     <Button className="rounded-0 w-100" size="sm" variant={showSection == 'policies' ? 'primary' : 'light'}onClick={() => setShowSection('policies')}>Policies</Button>
                                                 </Col>
                                                 <Col className="ps-1">
