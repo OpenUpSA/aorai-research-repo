@@ -43,7 +43,8 @@ function Map() {
     const [recentData, setRecentData] = useState([]);
     const [refreshMap, setRefreshMap] = useState(1);
     const [refreshChart, setRefreshChart] = useState(1);
-    const [showTable, setShowTable] = useState(false);
+    const [showSection, setShowSection] = useState('map');
+
 
     // const [years, setYears] = useState([]);
 
@@ -281,7 +282,7 @@ function Map() {
 
     }, [filteredData]);
 
-    useEffect(() => {
+    // useEffect(() => {
 
         // if(!showTable) {
         //     document.body.classList.add('bg');
@@ -289,7 +290,7 @@ function Map() {
         //     document.body.classList.remove('bg');
         // }
 
-    },[showTable]);
+    // },[showTable]);
 
     updateBarChart = () => {
 
@@ -431,7 +432,7 @@ function Map() {
         <div className="policy-map position-relative">
             <AnimateGroup play>
                 {
-                    !showTable &&
+                    showSection == 'map' &&
                         <MapContainer
                             className="map-container"
                             center={position}
@@ -519,10 +520,13 @@ function Map() {
                                         <Card.Body className="p-2">
                                             <Row>
                                                 <Col className="pe-1">
-                                                    <Button className="rounded-0 w-100" size="sm" variant={showTable ? 'light' : 'primary'} onClick={() => setShowTable(!showTable)}>Map</Button>
+                                                    <Button className="rounded-0 w-100" size="sm" variant={showSection == 'map' ? 'primary' : 'light'} onClick={() => setShowSection('map')}>Map</Button>
                                                 </Col>
                                                 <Col className="ps-1">
-                                                    <Button className="rounded-0 w-100" size="sm" variant={showTable ? 'primary' : 'light'}onClick={() => setShowTable(!showTable)}>Table</Button>
+                                                    <Button className="rounded-0 w-100" size="sm" variant={showSection == 'policies' ? 'primary' : 'light'}onClick={() => setShowSection('policies')}>Policies</Button>
+                                                </Col>
+                                                <Col className="ps-1">
+                                                    <Button className="rounded-0 w-100" size="sm" variant={showSection == 'list' ? 'primary' : 'light'}onClick={() => setShowSection('list')}>List</Button>
                                                 </Col>
                                             </Row>
                                         </Card.Body>
@@ -531,42 +535,70 @@ function Map() {
                             </Animate>
 
                             {
-                                showTable && 
-                                <Row className="mt-2">
-                                    <Col>
-                                        <div style={{minHeight: '1200px'}}>
+                                showSection == 'policies' && 
+                                    <Row className="mt-2">
+                                        <Col>
+                                            <div style={{minHeight: '1200px'}}>
+                                                {
+                                                    recentData.map((item, index) => {
+                                                            return (
+                                                                <div className="mb-2" key={index}>
+                                                                    <Card className="policies-list-item shadow-sm border-0 rounded data-card pe-auto">
+                                                                        <Card.Body>
+                                                                            <Row key={index} className="mb-2">
+                                                                                <Col>
+                                                                                    <h4><a href={item['External URL']} target="_blank">{item['English title'] ? item['English title'] : item['Original title']}</a></h4>
+                                                                                </Col>
+                                                                            </Row>
+                                                                            <Row>
+                                                                                <Col>
+                                                                                    {
+                                                                                        item['Country'].map((country, index) => {
+                                                                                            return (
+                                                                                                <div key={index}>
+                                                                                                    <div style={{width: '1.4em', height: '1.4em', borderRadius: '50%', overflow: 'hidden', position: 'relative', display: 'inline-block', top: '5px', backgroundColor: '#ccc'}} className="border">
+                                                                                                        <ReactCountryFlag 
+                                                                                                            countryCode={getCountryISO2(country['Country code'])}
+                                                                                                            svg
+                                                                                                            style={{
+                                                                                                                position: 'absolute', 
+                                                                                                                top: '30%',
+                                                                                                                left: '30%',
+                                                                                                                marginTop: '-50%',
+                                                                                                                marginLeft: '-50%',
+                                                                                                                fontSize: '1.8em',
+                                                                                                                lineHeight: '1.8em',
+                                                                                                            }} 
+                                                                                                        />
+                                                                                                    </div>{country['Country name']}
+                                                                                                </div>
+                                                                                            )
+                                                                                        })
 
-                                            {
-                                                recentData.map((item, index) => {
-                                                            
-                                                        return (
-                                                            <div className="recently-published p-2 mb-2" key={index}>
-                                                                <Row key={index} className="mb-2">
-                                                                    <Col>
-                                                                        <h4><a href={item['External URL']} target="_blank">{item['English title'] ? item['English title'] : item['Original title']}</a></h4>
-                                                                    </Col>
-                                                                </Row>
-                                                                <Row>
-                                                                    <Col>
-                                                                        
-                                                                    </Col>
-                                                                    <Col xs="auto">
-                                                                        {
-                                                                            (item.Year.map((year, index) => 
-                                                                                <span key={index}>{year.Year}</span>
-                                                                            ))
-                                                                        }
-                                                                    </Col>
-                                                                </Row>
-                                                            </div>
-                                                        )
-                                                        
-                                                    })
-                                                }
-                                            
-                                        </div>
-                                    </Col>
-                                </Row>
+                                                                                    }  
+                                                                                </Col>
+                                                                                <Col xs="auto">
+                                                                                    {
+                                                                                        (item.Year.map((year, index) => 
+                                                                                            <span key={index}>{year.Year}</span>
+                                                                                        ))
+                                                                                    }
+                                                                                </Col>
+                                                                            </Row>
+                                                                        </Card.Body>
+                                                                    </Card>
+                                                                </div>
+                                                            )
+                                                        })
+                                                    }
+                                            </div>
+                                        </Col>
+                                    </Row>
+                            }
+
+                            {
+                                showSection == 'list' &&
+                                <>list</>
                             }
                         
                         </Col>

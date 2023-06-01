@@ -67,17 +67,17 @@ body.bg {
     background-color: #f3f4f2;
 }
 
-.recently-published h4 {
+.recently-published h4, .policies-list-item h4 {
     color: #333;
     font-size: 1em !important;
 }
 
-.recently-published h4 a {
+.recently-published h4 a, .policies-list-item h4 a {
     color: #333;
     text-decoration: none;
 }
 
-.recently-published label {
+.recently-published label, .policies-list-item label {
     color: #999;
     font-size: 1rem;
 }
