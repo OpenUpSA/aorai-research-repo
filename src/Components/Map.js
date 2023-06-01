@@ -4,7 +4,7 @@ import ReactDOMServer from 'react-dom/server';
 import axios from 'axios';
 
 import { Icon } from '@mdi/react';
-import { mdiFilterOutline, mdiCogOutline } from '@mdi/js';
+import { mdiFilterOutline, mdiCogOutline, mdiInformationSlabCircle } from '@mdi/js';
 
 import { Card, Container, Row, Col, Accordion, Button } from 'react-bootstrap';
 import Spinner from 'react-bootstrap/Spinner';
@@ -503,8 +503,25 @@ function Map() {
                                                 <Accordion.Header>
                                                     <Icon path={mdiCogOutline} size={1} /> <div>SETTINGS</div>
                                                 </Accordion.Header>
-                                                <Accordion.Body>
-                                                    <h2>DATE SETTINGS</h2>
+                                                <Accordion.Body className="px-0">
+                                                    <MultiSelect
+                                                        options={allCountries.features.map((country) => {
+                                                            return {
+                                                                label: country.properties.name,
+                                                                value: country.properties.id
+                                                            }
+                                                        })
+                                                        }
+
+                                                        valueRenderer={
+                                                            (selected, _options) => {
+                                                                return selected.length
+                                                                    ? selected.length + " Countries Selected"
+                                                                    : "Countries";
+                                                            }
+                                                        }
+                                                    />
+                                                    <h2 className="mt-3">DATE SETTINGS</h2>
                                                 </Accordion.Body>
                                             </Accordion.Item>
                                         </Accordion>
@@ -607,76 +624,69 @@ function Map() {
                             {/* SETTINGS */}
                             <Animate start={{ opacity: 0, filter: 'blur(10px)' }} end={{ opacity: 1, filter: 'blur(0)' }} sequenceIndex={3}>
                                 <Card className="shadow-sm border-0 rounded data-card">
-                                    <Card.Header>
-                                        <MultiSelect
-                                            options={allCountries.features.map((country) => {
-                                                return {
-                                                    label: country.properties.name,
-                                                    value: country.properties.id
-                                                }
-                                            })
-                                            }
-
-                                            valueRenderer={
-                                                (selected, _options) => {
-                                                    return selected.length
-                                                        ? selected.length + " Countries Selected"
-                                                        : "Countries";
-                                                }
-                                            }
-                                        />
-                                    </Card.Header>
+                                    
                                     <Card.Body>
-                                        <div className="scrollarea" style={{ height: '500px' }}>
-                                            <h2>HIGHLIGHTS</h2>
+                                        <Accordion defaultActiveKey="0" flush>
+                                            <Accordion.Item eventKey="0">
+                                                <Accordion.Header>
+                                                    <Icon path={mdiInformationSlabCircle} size={1} /> <div>DETAILS</div>
+                                                </Accordion.Header>
+                                                <Accordion.Body className="px-0">
 
-                                            <Row className="p-1 mt-2 list-item-bg">
-                                                <Col>AI Law and Policy Items</Col>
-                                                <Col xs="auto">
-                                                    {itemsCount(filteredData)}
-                                                </Col>
-                                            </Row>
+                                                    <div className="scrollarea" style={{ height: '500px' }}>
+                                                        <h2>HIGHLIGHTS</h2>
 
-                                            <Row className="p-1 mt-2 list-item-bg">
-                                                <Col>Focus Areas</Col>
-                                                <Col xs="auto">{activePolicyAreas.length}</Col>
-                                            </Row>
+                                                        <Row className="p-1 mt-2 list-item-bg">
+                                                            <Col>AI Law and Policy Items</Col>
+                                                            <Col xs="auto">
+                                                                {itemsCount(filteredData)}
+                                                            </Col>
+                                                        </Row>
+
+                                                        <Row className="p-1 mt-2 list-item-bg">
+                                                            <Col>Focus Areas</Col>
+                                                            <Col xs="auto">{activePolicyAreas.length}</Col>
+                                                        </Row>
 
 
-                                            <h2 className="mt-3">POLICY AREAS</h2>
-                                            <BarChart data={activePolicyAreas} chartid={'all'} selectedPolicyAreas={selectedPolicyAreas} refreshChart={refreshChart}/>
-                                            <h2>PUBLISHING TIMELINE</h2>
-                                            <h2>RECENTLY PUBLISHED</h2>
-                                            <AnimateGroup play>
-                                                {
-                                                recentData.slice(0,10).map((item, index) => {
-                                                            
-                                                        return (
-                                                            <div className="recently-published p-2 mb-2" key={index}>
-                                                                <Row key={index} className="mb-2">
-                                                                    <Col>
-                                                                        <h4><a href={item['External URL']} target="_blank" rel="noreferrer">{item['English title'] ? item['English title'] : item['Original title']}</a></h4>
-                                                                    </Col>
-                                                                </Row>
-                                                                <Row>
-                                                                    <Col>
+                                                        <h2 className="mt-3">POLICY AREAS</h2>
+                                                        <BarChart data={activePolicyAreas} chartid={'all'} selectedPolicyAreas={selectedPolicyAreas} refreshChart={refreshChart}/>
+                                                        <h2 className="mt-2">PUBLISHING TIMELINE</h2>
+                                                        {/* <h2>RECENTLY PUBLISHED</h2>
+                                                        <AnimateGroup play>
+                                                            {
+                                                            recentData.slice(0,10).map((item, index) => {
                                                                         
-                                                                    </Col>
-                                                                    <Col xs="auto">
-                                                                        {
-                                                                            (item.Year.map((year, index) => 
-                                                                                <span key={index}>{year.Year}</span>
-                                                                            ))
-                                                                        }
-                                                                    </Col>
-                                                                </Row>
-                                                            </div>
-                                                        )
-                                                        
-                                                    })
-                                                }
-                                            </AnimateGroup>
-                                        </div>
+                                                                    return (
+                                                                        <div className="recently-published p-2 mb-2" key={index}>
+                                                                            <Row key={index} className="mb-2">
+                                                                                <Col>
+                                                                                    <h4><a href={item['External URL']} target="_blank" rel="noreferrer">{item['English title'] ? item['English title'] : item['Original title']}</a></h4>
+                                                                                </Col>
+                                                                            </Row>
+                                                                            <Row>
+                                                                                <Col>
+                                                                                    
+                                                                                </Col>
+                                                                                <Col xs="auto">
+                                                                                    {
+                                                                                        (item.Year.map((year, index) => 
+                                                                                            <span key={index}>{year.Year}</span>
+                                                                                        ))
+                                                                                    }
+                                                                                </Col>
+                                                                            </Row>
+                                                                        </div>
+                                                                    )
+                                                                    
+                                                                })
+                                                            }
+                                                        </AnimateGroup> */}
+                                                    </div>
+
+                                                </Accordion.Body>
+                                            </Accordion.Item>
+                                        </Accordion>
                                     </Card.Body>
                                 </Card>
                             </Animate>
