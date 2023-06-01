@@ -655,7 +655,7 @@ function Map() {
                                                             <div className="recently-published p-2 mb-2" key={index}>
                                                                 <Row key={index} className="mb-2">
                                                                     <Col>
-                                                                        <h4><a href={item['External URL']} target="_blank">{item['English title'] ? item['English title'] : item['Original title']}</a></h4>
+                                                                        <h4><a href={item['External URL']} target="_blank" rel="noreferrer">{item['English title'] ? item['English title'] : item['Original title']}</a></h4>
                                                                     </Col>
                                                                 </Row>
                                                                 <Row>
