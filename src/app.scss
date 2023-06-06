@@ -2,6 +2,7 @@
 
 $primary: #005450;
 $grey: #f3f4f3;
+$control-grey: #dcdfde;
 
 @import "../node_modules/bootstrap/scss/bootstrap";
 
@@ -9,8 +10,9 @@ body {
     margin: 0;
     font-family: 'Work Sans', sans-serif;
     font-weight: 300;
-    font-size: 12px;
+    font-size: 13px;
     background: url('bg.webp') repeat;
+    overflow-y: scroll;
 }
 
 body.bg {
@@ -28,9 +30,7 @@ body.bg {
     width: 100%; 
 }
 
-.leaflet-container {
-    background: transparent !important;
-}
+
 
 // Controls
 .controls-overlay {
@@ -40,28 +40,40 @@ body.bg {
     z-index: 400;
 }
 
+.card-header {
+    font-size: 1.2em;
+    font-weight: 500;
+}
+
 .accordion-button:not(.collapsed) {
     background-color: unset !important;
     color: unset !important;
 }
 
 .accordion-button:focus {
+    outline: unset !important;
+    box-shadow: unset !important;
+}
+
+
+.accordion-button:focus {
     box-shadow: none !important;
 }
 
+h2.accordion-header {
+    font-size: 1em;
+}
+
 .accordion-header button {
-    font-size: 0.9rem;
-    padding: 0.8rem;
+    font-size: 1em;
+    padding: 0.8em;
+    color: #0d201f;
 }
 
 .accordion-header button svg {
     margin-right: 1em;
 }
 
-.accordion-body h2, .data-card h2 {
-    font-size: 1rem;
-    color: #0d201f;
-}
 
 .recently-published {
     background-color: #f3f4f2;
@@ -78,16 +90,35 @@ body.bg {
 }
 
 .recently-published h4 a, .policies-list-item h4 a {
-    color: #333;
+    color: $primary;
     text-decoration: none;
 }
 
 .recently-published label, .policies-list-item label {
     color: #999;
-    font-size: 1rem;
+    font-size: 1em;
 }
 
+.policy-country-label, .policy-area-label {
+    background: #f3f4f3;
+    display: inline-block;
+    padding: 0.2em 1em 0.2em 0.3em;
+    font-weight: 500;
+    border-radius: 3px;
+    margin: 0 0.5em 0.5em 0;
+}
+
+.policy-area-label {
+    background: #dee2e1;
+}
+
+
+
 .list-item-bg {
+    background-color: #f3f4f3;
+}
+
+.no-policies {
     background-color: #f3f4f3;
 }
 
@@ -113,13 +144,22 @@ body.bg {
     padding: 0 0.4em;
 }
 
+.leaflet-container {
+    background: transparent !important;
+}
+
+.leaflet-control-attribution {
+    display: none !important;
+}
+
+
 // ScrollAreas
 
 .scrollarea {
     width: 100%;
     overflow-x: hidden;
     overflow-y: scroll;
-    padding: 0 12px 0 0;
+    padding: 0 20px 0 0;
 }
 
 .scrollarea::-webkit-scrollbar {
@@ -146,3 +186,10 @@ body.bg {
 .bar-chart-label, .bar-chart-value {
     font-size: 1em;
 }
+
+// colors
+
+.bg-control-grey {
+    background-color: $control-grey;
+}
+

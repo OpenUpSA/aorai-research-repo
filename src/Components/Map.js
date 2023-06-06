@@ -6,7 +6,7 @@ import axios from 'axios';
 import { Icon } from '@mdi/react';
 import { mdiFilterOutline, mdiCogOutline, mdiInformationSlabCircle } from '@mdi/js';
 
-import { Card, Container, Row, Col, Accordion, Button } from 'react-bootstrap';
+import { Card, Container, Row, Col, Accordion, Button, Form, Popover, OverlayTrigger } from 'react-bootstrap';
 import Spinner from 'react-bootstrap/Spinner';
 
 import { Animate, AnimateKeyframes, AnimateGroup } from "react-simple-animate";
@@ -25,6 +25,7 @@ import * as centroids from '../data/centroids.geo.json';
 
 import BarChart from './BarChart';
 import countryIso3To2 from 'country-iso-3-to-2';
+import { filter, geoConicEquidistantRaw } from 'd3';
 
 
 
@@ -37,22 +38,51 @@ function Map() {
     const [position, setPosition] = useState([-7, 22]);
     const [policyAreas, setPolicyAreas] = useState([]);
     const [selectedPolicyAreas, setSelectedPolicyAreas] = useState([]);
+    const [selectedCountries, setSelectedCountries] = useState([]);
+    const [selectedYears, setSelectedYears] = useState([1960,2023]);
     const [activePolicyAreas, setActivePolicyAreas] = useState([]);
-    const [policiesData, setPoliciesData] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
-    const [recentData, setRecentData] = useState([]);
+    const [policies, setPolicies] = useState([]);
     const [refreshMap, setRefreshMap] = useState(1);
-    const [refreshChart, setRefreshChart] = useState(1);
     const [showSection, setShowSection] = useState('map');
-
-
-    // const [years, setYears] = useState([]);
 
     useEffect(() => {
 
-        // Get all Policies
+        getPolicies();
+        getPolicyAreas();
+        
+    }, []);
 
-        setLoadingText('Fetching Data');
+    getPolicies = () => {
+
+        let countryWhere = '';
+        let policyAreaWhere = '';
+
+        let yearsArray = [];
+        for (let year = selectedYears[0]; year <= selectedYears[1]; year++) {
+            yearsArray.push(year);
+        }
+        
+        let dateWhere = '(Year,in,' + yearsArray.join(',') + ')';
+
+        if(selectedCountries.length) {
+            countryWhere = '(Country,in,' + selectedCountries.join(',') + ')';
+        }
+        if (selectedPolicyAreas.length) {
+            policyAreaWhere = '((Observatory AI policy areas - primary,in,' + selectedPolicyAreas.join(',') + ')~or(Observatory AI policy areas - secondary,in,' + selectedPolicyAreas.join(',') + '))';
+        }
+
+        let where = '';
+        if (countryWhere != '' && policyAreaWhere != '') {
+            where = dateWhere + '~and(Country,isnot,null)~and' + countryWhere + '~and' + policyAreaWhere;
+        } else if (countryWhere == '' && policyAreaWhere == '') {
+            where = dateWhere + '~and(Country,isnot,null)';
+        } else {
+            where = dateWhere + '~and(Country,isnot,null)~and' + countryWhere + policyAreaWhere;
+        }
+
+        console.log(where);
+
 
         axios.get(api.base_url + '/Policy and Governance Map', {
             headers: {
@@ -62,9 +92,7 @@ function Map() {
                 limit: 150,
                 fields: 'Original title,English title,External URL,Country,Year,Analysis status,Observatory AI policy areas - primary,Observatory AI policy areas - secondary',
                 'nested[Country][fields]': 'Country name,Country code',
-                'nested[Observatory AI policy areas - primary][fields]': 'Policy area, policy_label',
-                'nested[Observatory AI policy areas - secondary][fields]': 'Policy area, policy_label',
-                where: '(Country,isnot,null)',
+                where: where,
                 // where: '(Analysis status,eq,Publish to website)~and(Country,isnot,null)',
             }
         }).then(function(response) {
@@ -88,9 +116,7 @@ function Map() {
                         limit: 150,
                         fields: 'Original title,English title,External URL,Country,Year,Analysis status,Observatory AI policy areas - primary,Observatory AI policy areas - secondary',
                         'nested[Country][fields]': 'Country name,Country code',
-                        'nested[Observatory AI policy areas - primary][fields]': 'Policy area,policy_label',
-                        'nested[Observatory AI policy areas - secondary][fields]': 'Policy area,policy_label',
-                        where: '(Country,isnot,null)',
+                        where: where,
                         // where: '(Analysis status,eq,Publish to website)~and(Country,isnot,null)',
                     }
                 }))
@@ -99,20 +125,41 @@ function Map() {
 
             axios.all(queries_get).then(axios.spread((...responses) => {
 
-                let policies_data = [];
+                let policiesData = [];
 
                 for (let count = 0; count < responses.length; count++) {
                     let response = responses[count];
-                    policies_data = policies_data.concat(response.data.list);
+                    policiesData = policiesData.concat(response.data.list);
                 }
 
-                setPoliciesData(policies_data);
+                let policiesDataTransformed = policiesData.reduce((r, a) => {
+                    r[a.Country[0]['Country code']] = [...r[a.Country[0]['Country code']] || [], a];
+                    return r;
+                }, {});
+
+                // Add keys for missing countries
+                for (let count = 0; count < africanCountries.length; count++) {
+                    let country = africanCountries[count];
+                    if (!policiesDataTransformed[country.iso_code]) {
+                        policiesDataTransformed[country.iso_code] = [];
+                    }
+                }
+
+
+                setFilteredData(policiesDataTransformed);
+                setLoading(false);
+
                 
             })).catch(error => {
                 console.log(error);
             })
 
         })
+
+
+    }
+
+    getPolicyAreas = () => {
 
         // Get POLICY AREAS data
         axios.get(api.base_url + '/Observatory AI policy areas', {
@@ -122,54 +169,14 @@ function Map() {
         }).then(function(response) {
             setPolicyAreas(response.data.list);
         })
-
-        
-    }, []);
-
-   
-
-
-    useEffect(() => {
-        
-        if (policiesData.length) {
-            
-            setLoading(false);
-
-            let tempData = policiesData.reduce((r, a) => {
-                r[a.Country[0]['Country code']] = [...r[a.Country[0]['Country code']] || [], a];
-                return r;
-            }, {});
-            
-            setPoliciesData(tempData);
-            setFilteredData(tempData);
-
-        }
-
-    }, [policiesData]);
-   
+    
+    }
 
     useEffect(() => {
 
-        if(!selectedPolicyAreas.length) {
-            setFilteredData(policiesData);
-            return;
-        }
+        getPolicies();
 
-        let tempData = {};
-
-        Object.keys(policiesData).forEach(key=>{
-            let policies = policiesData[key];
-            let filteredPolicies = policies.filter((policy) => {
-                let policy_areas = policy['Observatory AI policy areas - primary'].map(policy_area => policy_area.policy_label);
-                return policy_areas.some(r=> selectedPolicyAreas.indexOf(r) >= 0);
-            });
-            tempData[key] = filteredPolicies;
-        })
-
-        setFilteredData(tempData);
-
-
-    }, [selectedPolicyAreas]);
+    }, [selectedPolicyAreas, selectedCountries, selectedYears]);
 
 
     const getPolicyCount = (iso_code) => {
@@ -177,12 +184,12 @@ function Map() {
         if(filteredData[iso_code]) {
             return filteredData[iso_code].length;
         } else {
-            return 0;
+            return '-';
         }
 
     }
 
-    const selectPolicy = (e) => {
+    const selectPolicyArea = (e) => {
 
         let policy = e.target.value;
         let checked = e.target.checked;
@@ -192,15 +199,61 @@ function Map() {
         } else {
             setSelectedPolicyAreas(selectedPolicyAreas.filter((item) => item !== policy));
         }
-        
+    }
+
+    const selectCountry = (e) => {
+
+        let country = e.target.value;
+        let checked = e.target.checked;
+
+        if (checked) {
+            setSelectedCountries([...selectedCountries, country]);
+        } else {
+            setSelectedCountries(selectedCountries.filter((item) => item !== country));
+        }
 
     }
+
+    const selectYear = (e, startEnd) => {
+        
+        let year = e.target.value;
+
+        if (startEnd == 'start') {
+            setSelectedYears([year, selectedYears[1]]);
+        } else {
+            if(year < selectedYears[0]) {
+                setSelectedYears([year,selectedYears[0]]);
+            } else {
+                setSelectedYears([selectedYears[0],year]);
+            }
+        }
+
+    }
+
+    const transformFilteredData = () => {
+
+        let policiesData = [];
+
+        Object.keys(filteredData).forEach( key => {
+
+            if(filteredData[key].length) {
+                policiesData.push(filteredData[key]);
+            }
+
+        })
+
+        policiesData = policiesData.flat();
+
+        setPolicies(policiesData);
+        updateBarChart();
+    
+    }
+
 
     const itemsCount = (data) => {
         
         let policyCount = 0;
 
-        // Go through all data keys
         Object.keys(data).forEach(key=>{
             policyCount += data[key].length;
         })
@@ -209,12 +262,15 @@ function Map() {
 
     }
 
-    
-
-
     const toggleAllPolicyAreas = (e) => {
 
-        return;
+        let checked = e.target.checked;
+
+        if (checked) {
+            setSelectedPolicyAreas(policyAreas);
+        } else {
+            setSelectedPolicyAreas([]);
+        }
 
     }
 
@@ -229,94 +285,53 @@ function Map() {
         })
 
         setRefreshMap(refreshMap + 1);
-
     }
+
 
     useEffect(() => {
 
+        transformFilteredData();
         updateTooltips();
-        updateBarChart();
-
-        let recentDataTemp = [];
-
-        Object.keys(filteredData).forEach(key=>{
-            recentDataTemp = [...recentDataTemp,filteredData[key]];
-        })
-
-        let recentDataTemp1 = recentDataTemp.reduce((a, b) => a.concat(b), []);
-
-        // Drop policies without year
-        recentDataTemp1 = recentDataTemp1.filter((policy) => {
-            return policy.Year.length;
-        });
-
-        // Drop if year == 9999
-        recentDataTemp1 = recentDataTemp1.filter((policy) => {
-            return policy.Year[0].Year != 9999;
-        });
-
-        recentDataTemp1.forEach((policy) => {
-
-            // polic.Year is an array of objects. Get the one with the most recent Year property
-            let year = policy.Year.reduce((a, b) => {
-                return a.Year > b.Year ? a : b;
-            });
-
-
-            policy.recent_year = year.Year;
-
-        });
-
-        // Sort by year
-        recentDataTemp1.sort((a, b) => (a.recent_year > b.recent_year) ? -1 : 1);
-
-            
- 
-
-
-
-        setRecentData(recentDataTemp1);
-
-        console.log(recentDataTemp1);
-
+        
+    
 
     }, [filteredData]);
 
-    // useEffect(() => {
-
-        // if(!showTable) {
-        //     document.body.classList.add('bg');
-        // } else {
-        //     document.body.classList.remove('bg');
-        // }
-
-    // },[showTable]);
 
     const updateBarChart = () => {
 
         let activePolicyAreas = [];
 
-        Object.keys(filteredData).forEach((key)=>{
-            filteredData[key].forEach((policy)=>{
-                policy.policyAreas = policy['Observatory AI policy areas - primary'];
-                policy.policyAreas.forEach((policyArea)=>{
-                    let policyAreaIndex = activePolicyAreas.findIndex((obj)=>{return obj.policy_area === policyArea.policy_label});
-                    if(policyAreaIndex === -1){
-                        activePolicyAreas.push({policy_area:policyArea.policy_label, count:1});
-                    }else{
-                        activePolicyAreas[policyAreaIndex].count++;
-                    }
+        if(selectedPolicyAreas.length) {
 
-
+            // Add all selectedPolicyAreas to the array
+            selectedPolicyAreas.forEach((selectedPolicyArea) => {
+                activePolicyAreas.push({
+                    policy_area: selectedPolicyArea,
+                    count: 0
                 });
             });
-        });
 
-        setActivePolicyAreas(activePolicyAreas);
+            Object.keys(filteredData).forEach((key)=>{
+                filteredData[key].forEach((policy)=>{
+                    policy.policyAreas = policy['Observatory AI policy areas - primary'].concat(policy['Observatory AI policy areas - secondary']);
+                    policy.policyAreas.forEach((policyArea)=>{
+                        activePolicyAreas.forEach((activePolicyArea)=>{
+                            if (activePolicyArea.policy_area == policyArea['Policy area']) {
+                                activePolicyArea.count++;
+                            }
+                        });
+                    });
+                });
+            });
+
+            setActivePolicyAreas(activePolicyAreas);
+        
+        } else {
+            setActivePolicyAreas([]);
+        }
 
     }
-
-    
 
     const style = (feature) => {
 
@@ -330,7 +345,6 @@ function Map() {
 
         }
 
-
         return {
             fillColor: africanCountries.map(country => country.iso_code).includes(feature.id) ? scale(getPolicyCount(feature.id)) : '#e3e7e5',
             weight: 0.5,
@@ -341,11 +355,6 @@ function Map() {
         };
 
     }
-
-
-
-   
-
 
     const onEachFeature = (feature, layer) => {
         if (feature) {
@@ -372,7 +381,7 @@ function Map() {
                         />
                         </div>{feature.properties.name}
                         {getPolicyCount(feature.id)}
-                        <BarChart data={activePolicyAreas} chartid={feature.id} refreshChart={refreshChart}/>
+                        <BarChart data={activePolicyAreas} chartid={feature.id}/>
 
                 </>
             );
@@ -380,8 +389,6 @@ function Map() {
             layer.bindPopup(popupContent);
 
         }
-
-
 
         layer.on({
             click: (e) => {
@@ -391,7 +398,7 @@ function Map() {
                 });
                 layer.bringToFront();
                 layer.openPopup();
-                setRefreshChart(refreshChart + 1);
+                
 
             }
         });
@@ -417,8 +424,13 @@ function Map() {
 
     }
 
-    return (
+    
 
+
+
+
+
+    return (
         
         loading ?
 
@@ -447,7 +459,6 @@ function Map() {
                         </MapContainer>
                 }
                 
-                
                 <Container fluid className="controls-overlay py-2 pe-none">
                     <Row className="pe-none">
                         <Col md={3} className="pe-auto">
@@ -455,23 +466,23 @@ function Map() {
                             {/* FILTERS */}
                             <Animate start={{ opacity: 0, filter: 'blur(10px)' }} end={{ opacity: 1, filter: 'blur(0)' }} sequenceIndex={1}>
                                 <Card className="shadow-sm border-0 rounded sticky-top">
-                                    <Card.Body className="py-0">
+                                    <Card.Header>
+                                        <Icon path={mdiFilterOutline} size={1} /> <span>FILTERS</span>
+                                    </Card.Header>
+                                    <Card.Body className="p-0">
                                         <Accordion defaultActiveKey="0" flush>
                                             <Accordion.Item eventKey="0">
-                                                <Accordion.Header>
-                                                    <Icon path={mdiFilterOutline} size={1} /> <div>FILTERS</div>
-                                                </Accordion.Header>
-                                                <Accordion.Body className="px-1">
-                                                    <div className="scrollarea" style={{ height: '300px' }}>
-                                                        <h2>FOCUS AREAS</h2>
-                                                        <Row className="mb-2 p-1 list-item-bg">
+                                                <Accordion.Header>POLICY AREAS</Accordion.Header>
+                                                <Accordion.Body className="px-2">
+                                                    <div className="scrollarea" style={{ height: '250px' }}>
+                                                        {/* <Row className="mb-2 p-1 list-item-bg">
                                                             <Col>
                                                                 <label>All</label>
                                                             </Col>
                                                             <Col xs="auto">
                                                                 <input type="checkbox" value="all" onChange={toggleAllPolicyAreas}/>
                                                             </Col>
-                                                        </Row>
+                                                        </Row> */}
                                                         {
                                                             policyAreas.map((policy_area, index) => {
                                                                 return (
@@ -480,7 +491,7 @@ function Map() {
                                                                             <label>{policy_area['Policy area']}</label>
                                                                         </Col>
                                                                         <Col xs="auto">
-                                                                            <input type="checkbox" value={policy_area.policy_label} onChange={selectPolicy} />
+                                                                            <input type="checkbox" value={policy_area['Policy area']} onChange={selectPolicyArea} checked={selectedPolicyAreas.includes(policy_area['Policy area'])} />
                                                                         </Col>
                                                                     </Row>
                                                                 )
@@ -489,13 +500,89 @@ function Map() {
                                                     </div>
                                                 </Accordion.Body>
                                             </Accordion.Item>
+                                            <Accordion.Item eventKey="1">
+                                                <Accordion.Header>COUNTRIES</Accordion.Header>
+                                                <Accordion.Body className="px-2">
+                                                    <div className="scrollarea" style={{ height: '250px' }}>
+                                                        {
+                                                            allCountries.features.map((country, index) => {
+                                                                if(africanCountries.map(cntry => cntry.iso_code).includes(country.id)) {
+                                                                    return (
+                                                                        <Row key={index} className="mb-2 p-1 list-item-bg">
+                                                                            <Col>
+                                                                                <label>
+                                                                                    <div style={{width: '1.4em', height: '1.4em', borderRadius: '50%', overflow: 'hidden', position: 'relative', display: 'inline-block', top: '5px', backgroundColor: '#ccc'}} className="border">
+                                                                                        <ReactCountryFlag 
+                                                                                            countryCode={getCountryISO2(country.id)}
+                                                                                            svg
+                                                                                            style={{
+                                                                                                position: 'absolute', 
+                                                                                                top: '30%',
+                                                                                                left: '30%',
+                                                                                                marginTop: '-50%',
+                                                                                                marginLeft: '-50%',
+                                                                                                fontSize: '1.8em',
+                                                                                                lineHeight: '1.8em',
+                                                                                            }} 
+                                                                                        />
+                                                                                    </div>&nbsp;&nbsp;{country.properties.name}
+                                                                                </label>
+                                                                            </Col>
+                                                                            <Col xs="auto">
+                                                                                <input type="checkbox" value={country.properties.name} onChange={selectCountry} />
+                                                                            </Col>
+                                                                        </Row>
+                                                                    )
+                                                                }
+                                                            })
+                                                        }
+                                                    </div>
+                                                </Accordion.Body>
+                                            </Accordion.Item>
+                                            <Accordion.Item eventKey="2">
+                                                <Accordion.Header>DATE SETTINGS</Accordion.Header>
+                                                <Accordion.Body className="px-2">
+                                                    <Row>
+                                                        <Col xs="auto" className="d-flex align-items-center fw-bold">Period:</Col>
+                                                        <Col className="pe-0">
+                                                            <Form.Select className="bg-control-grey" size="sm" onChange={ e => selectYear(e, 'start')}>
+                                                            {
+                                                                // Option for dates between 1960 and 2023
+                                                                Array.from({ length: 2023 - 1960 + 1 }, (_, i) => i + 1960).map((year) => {
+                                                                    return (
+                                                                        <option key={year} value={year} selected={year == selectedYears[0] ? 'selected' : ''}>{year}</option>
+                                                                    )
+                                                                })
+
+                                                            }
+                                                            </Form.Select>
+                                                        </Col>
+                                                        <Col xs="auto" className="d-flex align-items-center px-2">
+                                                            TO
+                                                        </Col>
+                                                        <Col className="ps-0">
+                                                            <Form.Select className="bg-control-grey" size="sm" onChange={ e => selectYear(e, 'end')}>
+                                                            {
+                                                                // Option for dates between 1960 and 2023
+                                                                Array.from({ length: 2023 - 1960 + 1 }, (_, i) => i + 1960).map((year) => {
+                                                                    return (
+                                                                        <option key={year} value={year} selected={year == selectedYears[1] ? 'selected' : ''}>{year}</option>
+                                                                    )
+                                                                })
+
+                                                            }
+                                                            </Form.Select>
+                                                        </Col>
+                                                    </Row>
+                                                </Accordion.Body>
+                                            </Accordion.Item>
                                         </Accordion>
                                     </Card.Body>
                                 </Card>
                             </Animate>
 
                             {/* SETTINGS */}
-                            <Animate start={{ opacity: 0, filter: 'blur(10px)' }} end={{ opacity: 1, filter: 'blur(0)' }} sequenceIndex={2}>
+                            {/* <Animate start={{ opacity: 0, filter: 'blur(10px)' }} end={{ opacity: 1, filter: 'blur(0)' }} sequenceIndex={2}>
                                 <Card className="mt-3 shadow-sm border-0 rounded">
                                     <Card.Body className="py-0">
                                         <Accordion defaultActiveKey="0" flush>
@@ -504,30 +591,13 @@ function Map() {
                                                     <Icon path={mdiCogOutline} size={1} /> <div>SETTINGS</div>
                                                 </Accordion.Header>
                                                 <Accordion.Body className="px-0">
-                                                    <MultiSelect
-                                                        options={allCountries.features.map((country) => {
-                                                            return {
-                                                                label: country.properties.name,
-                                                                value: country.properties.id
-                                                            }
-                                                        })
-                                                        }
-
-                                                        valueRenderer={
-                                                            (selected, _options) => {
-                                                                return selected.length
-                                                                    ? selected.length + " Countries Selected"
-                                                                    : "Countries";
-                                                            }
-                                                        }
-                                                    />
-                                                    <h2 className="mt-3">DATE SETTINGS</h2>
+                                                    
                                                 </Accordion.Body>
                                             </Accordion.Item>
                                         </Accordion>
                                     </Card.Body>
                                 </Card>
-                            </Animate>
+                            </Animate> */}
 
                         </Col>
                         <Col className="pe-none">
@@ -539,11 +609,11 @@ function Map() {
                                                 <Col className="pe-1">
                                                     <Button className="rounded-0 w-100" size="sm" variant={showSection == 'map' ? 'primary' : 'light'} onClick={() => setShowSection('map')}>Map</Button>
                                                 </Col>
-                                                <Col className="px-1">
-                                                    <Button className="rounded-0 w-100" size="sm" variant={showSection == 'policies' ? 'primary' : 'light'}onClick={() => setShowSection('policies')}>Policies</Button>
-                                                </Col>
-                                                <Col className="ps-1">
+                                                {/* <Col className="px-1">
                                                     <Button className="rounded-0 w-100" size="sm" variant={showSection == 'list' ? 'primary' : 'light'}onClick={() => setShowSection('list')}>List</Button>
+                                                </Col> */}
+                                                <Col className="ps-1">
+                                                    <Button className="rounded-0 w-100" size="sm" variant={showSection == 'policies' ? 'primary' : 'light'}onClick={() => setShowSection('policies')}>Policies</Button>
                                                 </Col>
                                             </Row>
                                         </Card.Body>
@@ -555,9 +625,9 @@ function Map() {
                                 showSection == 'policies' && 
                                     <Row className="mt-2">
                                         <Col>
-                                            <div style={{minHeight: '1200px'}}>
+                                            <div>
                                                 {
-                                                    recentData.map((item, index) => {
+                                                    policies.map((item, index) => {
                                                             return (
                                                                 <div className="mb-2" key={index}>
                                                                     <Card className="policies-list-item shadow-sm border-0 rounded data-card pe-auto">
@@ -566,13 +636,22 @@ function Map() {
                                                                                 <Col>
                                                                                     <h4><a href={item['External URL']} target="_blank">{item['English title'] ? item['English title'] : item['Original title']}</a></h4>
                                                                                 </Col>
+                                                                                <Col xs="auto" className="d-flex align-items-center fw-bold">
+                                                                                    {
+                                                                                        (item.Year.map((year, index) => 
+                                                                                            <span key={index}>{year.Year}</span>
+                                                                                        ))
+                                                                                    }
+                                                                                </Col>
                                                                             </Row>
+                                                                        </Card.Body>
+                                                                        <Card.Footer>
                                                                             <Row>
                                                                                 <Col>
                                                                                     {
                                                                                         item['Country'].map((country, index) => {
                                                                                             return (
-                                                                                                <div key={index}>
+                                                                                                <div key={index} className="policy-country-label">
                                                                                                     <div style={{width: '1.4em', height: '1.4em', borderRadius: '50%', overflow: 'hidden', position: 'relative', display: 'inline-block', top: '5px', backgroundColor: '#ccc'}} className="border">
                                                                                                         <ReactCountryFlag 
                                                                                                             countryCode={getCountryISO2(country['Country code'])}
@@ -587,22 +666,28 @@ function Map() {
                                                                                                                 lineHeight: '1.8em',
                                                                                                             }} 
                                                                                                         />
-                                                                                                    </div>{country['Country name']}
+                                                                                                    </div>&nbsp;&nbsp;{country['Country name']}
                                                                                                 </div>
                                                                                             )
                                                                                         })
 
                                                                                     }  
                                                                                 </Col>
-                                                                                <Col xs="auto">
+                                                                            </Row>
+                                                                            <Row>
+                                                                                <Col>
                                                                                     {
-                                                                                        (item.Year.map((year, index) => 
-                                                                                            <span key={index}>{year.Year}</span>
-                                                                                        ))
+                                                                                        item['Observatory AI policy areas - primary'].concat(item['Observatory AI policy areas - secondary']).map((policyArea, index) => {
+                                                                                            return (
+                                                                                                <div className="policy-area-label">
+                                                                                                { policyArea['Policy area'] }
+                                                                                                </div>
+                                                                                            )
+                                                                                        })
                                                                                     }
                                                                                 </Col>
                                                                             </Row>
-                                                                        </Card.Body>
+                                                                        </Card.Footer>
                                                                     </Card>
                                                                 </div>
                                                             )
@@ -613,10 +698,14 @@ function Map() {
                                     </Row>
                             }
 
-                            {
+                            {/* {
                                 showSection == 'list' &&
-                                <>list</>
-                            }
+
+                                    
+                                        
+
+
+                            } */}
                         
                         </Col>
                         <Col md={3} className="pe-auto">
@@ -624,68 +713,88 @@ function Map() {
                             {/* SETTINGS */}
                             <Animate start={{ opacity: 0, filter: 'blur(10px)' }} end={{ opacity: 1, filter: 'blur(0)' }} sequenceIndex={3}>
                                 <Card className="shadow-sm border-0 rounded data-card">
-                                    
-                                    <Card.Body>
-                                        <Accordion defaultActiveKey="0" flush>
+                                    <Card.Header>
+                                        <Icon path={mdiInformationSlabCircle} size={1} /> <span>DETAILS</span>
+                                    </Card.Header>
+
+                                    <Card.Body className="p-0">
+                                        <Accordion defaultActiveKey={['0','1']} flush alwaysOpen>
                                             <Accordion.Item eventKey="0">
-                                                <Accordion.Header>
-                                                    <Icon path={mdiInformationSlabCircle} size={1} /> <div>DETAILS</div>
-                                                </Accordion.Header>
-                                                <Accordion.Body className="px-0">
+                                                <Accordion.Header>HIGHLIGHTS</Accordion.Header>
+                                                <Accordion.Body className="px-2 fw-bold">
+                                                    <Container>
 
-                                                    <div className="scrollarea" style={{ height: '500px' }}>
-                                                        <h2>HIGHLIGHTS</h2>
-
-                                                        <Row className="p-1 mt-2 list-item-bg">
+                                                        <Row className="p-1 list-item-bg">
                                                             <Col>AI Law and Policy Items</Col>
                                                             <Col xs="auto">
                                                                 {itemsCount(filteredData)}
                                                             </Col>
                                                         </Row>
-
                                                         <Row className="p-1 mt-2 list-item-bg">
-                                                            <Col>Focus Areas</Col>
-                                                            <Col xs="auto">{activePolicyAreas.length}</Col>
+                                                            <Col>
+                                                                {selectedPolicyAreas.length > 0 ?
+                                                                    <OverlayTrigger placement="left" overlay={
+                                                                        <Popover id="popover-basic">
+                                                                            <Popover.Header as="h3">Policy Areas</Popover.Header>
+                                                                            <Popover.Body>
+                                                                            {
+                                                                                selectedPolicyAreas.join(', ')
+                                                                            }
+                                                                            </Popover.Body>
+                                                                        </Popover>
+                                                                    }>
+                                                                        <span>Policy Areas</span>
+                                                                    </OverlayTrigger>
+                                                                    : 'Policy Areas'
+                                                                }
+                                                            </Col>
+                                                            <Col xs="auto">{selectedPolicyAreas.length ? selectedPolicyAreas.length : 'All'}</Col>
                                                         </Row>
-
-
-                                                        <h2 className="mt-3">POLICY AREAS</h2>
-                                                        <BarChart data={activePolicyAreas} chartid={'all'} selectedPolicyAreas={selectedPolicyAreas} refreshChart={refreshChart}/>
-                                                        <h2 className="mt-2">PUBLISHING TIMELINE</h2>
-                                                        {/* <h2>RECENTLY PUBLISHED</h2>
-                                                        <AnimateGroup play>
-                                                            {
-                                                            recentData.slice(0,10).map((item, index) => {
-                                                                        
-                                                                    return (
-                                                                        <div className="recently-published p-2 mb-2" key={index}>
-                                                                            <Row key={index} className="mb-2">
-                                                                                <Col>
-                                                                                    <h4><a href={item['External URL']} target="_blank" rel="noreferrer">{item['English title'] ? item['English title'] : item['Original title']}</a></h4>
-                                                                                </Col>
-                                                                            </Row>
-                                                                            <Row>
-                                                                                <Col>
-                                                                                    
-                                                                                </Col>
-                                                                                <Col xs="auto">
-                                                                                    {
-                                                                                        (item.Year.map((year, index) => 
-                                                                                            <span key={index}>{year.Year}</span>
-                                                                                        ))
-                                                                                    }
-                                                                                </Col>
-                                                                            </Row>
-                                                                        </div>
-                                                                    )
-                                                                    
-                                                                })
-                                                            }
-                                                        </AnimateGroup> */}
-                                                    </div>
-
+                                                        <Row className="p-1 mt-2 list-item-bg">
+                                                            <Col>
+                                                                {
+                                                                    selectedCountries.length > 0 ?
+                                                                    <OverlayTrigger placement="left" overlay={
+                                                                        <Popover id="popover-basic">
+                                                                            <Popover.Header as="h3">Countries</Popover.Header>
+                                                                            <Popover.Body>
+                                                                            {
+                                                                                selectedCountries.join(', ')
+                                                                            }
+                                                                            </Popover.Body>
+                                                                        </Popover>
+                                                                    }>
+                                                                        <span>Countries</span>
+                                                                    </OverlayTrigger>
+                                                                    : 'Countries'
+                                                                }
+                                                            </Col>
+                                                            <Col xs="auto">{selectedCountries.length ? selectedCountries.length : 'All'}</Col>
+                                                        </Row>
+                                                        <Row className="p-1 mt-2 list-item-bg">
+                                                            <Col>Period</Col>
+                                                            <Col xs="auto">{selectedYears[0]} - {selectedYears[1]}</Col>
+                                                        </Row>
+                                                        
+                                                    
+                                                    </Container>
                                                 </Accordion.Body>
                                             </Accordion.Item>
+                                            <Accordion.Item eventKey="1">
+                                                <Accordion.Header>AI POLICY AREAS</Accordion.Header>
+                                                <Accordion.Body className="px-2">
+                                                    {
+                                                        activePolicyAreas.length > 0 ?
+                                                        <BarChart data={activePolicyAreas} chartid={'all'}/>
+                                                        : <div className="p-1 text-center no-policies fw-bold">No Policy Areas Selected</div>
+                                                    }
+                                                </Accordion.Body>
+                                            </Accordion.Item>
+                                            {/* <Accordion.Item eventKey="2">
+                                                <Accordion.Header>PUBLISHING TIMELINE</Accordion.Header>
+                                                <Accordion.Body className="px-0">
+                                                </Accordion.Body>
+                                            </Accordion.Item> */}
                                         </Accordion>
                                     </Card.Body>
                                 </Card>
