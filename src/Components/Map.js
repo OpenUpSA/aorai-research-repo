@@ -53,7 +53,7 @@ function Map() {
         
     }, []);
 
-    getPolicies = () => {
+    const getPolicies = () => {
 
         let countryWhere = '';
         let policyAreaWhere = '';
@@ -159,7 +159,7 @@ function Map() {
 
     }
 
-    getPolicyAreas = () => {
+    const getPolicyAreas = () => {
 
         // Get POLICY AREAS data
         axios.get(api.base_url + '/Observatory AI policy areas', {
