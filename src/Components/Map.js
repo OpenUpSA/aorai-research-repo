@@ -81,8 +81,6 @@ function Map() {
             where = dateWhere + '~and(Country,isnot,null)~and' + countryWhere + policyAreaWhere;
         }
 
-        console.log(where);
-
 
         axios.get(api.base_url + '/Policy and Governance Map', {
             headers: {
@@ -96,6 +94,9 @@ function Map() {
                 // where: '(Analysis status,eq,Publish to website)~and(Country,isnot,null)',
             }
         }).then(function(response) {
+
+
+
 
             let queries = [];
 
@@ -292,11 +293,8 @@ function Map() {
 
         transformFilteredData();
         updateTooltips();
-        
-    
 
     }, [filteredData]);
-
 
     const updateBarChart = () => {
 
@@ -547,7 +545,6 @@ function Map() {
                                                         <Col className="pe-0">
                                                             <Form.Select className="bg-control-grey" size="sm" onChange={ e => selectYear(e, 'start')}>
                                                             {
-                                                                // Option for dates between 1960 and 2023
                                                                 Array.from({ length: 2023 - 1960 + 1 }, (_, i) => i + 1960).map((year) => {
                                                                     return (
                                                                         <option key={year} value={year} selected={year == selectedYears[0] ? 'selected' : ''}>{year}</option>
@@ -563,7 +560,6 @@ function Map() {
                                                         <Col className="ps-0">
                                                             <Form.Select className="bg-control-grey" size="sm" onChange={ e => selectYear(e, 'end')}>
                                                             {
-                                                                // Option for dates between 1960 and 2023
                                                                 Array.from({ length: 2023 - 1960 + 1 }, (_, i) => i + 1960).map((year) => {
                                                                     return (
                                                                         <option key={year} value={year} selected={year == selectedYears[1] ? 'selected' : ''}>{year}</option>
@@ -609,9 +605,9 @@ function Map() {
                                                 <Col className="pe-1">
                                                     <Button className="rounded-0 w-100" size="sm" variant={showSection == 'map' ? 'primary' : 'light'} onClick={() => setShowSection('map')}>Map</Button>
                                                 </Col>
-                                                {/* <Col className="px-1">
+                                                <Col className="px-1">
                                                     <Button className="rounded-0 w-100" size="sm" variant={showSection == 'list' ? 'primary' : 'light'}onClick={() => setShowSection('list')}>List</Button>
-                                                </Col> */}
+                                                </Col>
                                                 <Col className="ps-1">
                                                     <Button className="rounded-0 w-100" size="sm" variant={showSection == 'policies' ? 'primary' : 'light'}onClick={() => setShowSection('policies')}>Policies</Button>
                                                 </Col>
@@ -698,14 +694,49 @@ function Map() {
                                     </Row>
                             }
 
-                            {/* {
+                            {
                                 showSection == 'list' &&
 
-                                    
-                                        
+                                    Object.keys(filteredData).map((key,index)=>{
+                                        console.log(filteredData);
+                                        return (
+                                            <Row key={index}>
+                                                <Col>
+                                                    <Card className="mt-2 policies-list-item shadow-sm border-0 rounded data-card pe-auto">
+                                                        <Card.Body>
+                                                            <Row>
+                                                                <Col xs="auto">
+                                                                    <div style={{width: '2em', height: '2em', borderRadius: '50%', overflow: 'hidden', position: 'relative', display: 'inline-block', top: '5px', backgroundColor: '#ccc'}} className="border">
+                                                                        <ReactCountryFlag 
+                                                                            countryCode={getCountryISO2(key)}
+                                                                            svg
+                                                                            style={{
+                                                                                position: 'absolute', 
+                                                                                top: '30%',
+                                                                                left: '30%',
+                                                                                marginTop: '-50%',
+                                                                                marginLeft: '-50%',
+                                                                                fontSize: '2em',
+                                                                                lineHeight: '1.8em',
+                                                                            }} 
+                                                                        />
+                                                                    </div>
+                                                                </Col>
+                                                                <Col>
+                                                                    <h4>{key}</h4>
+                                                                </Col>
+                                                                <Col xs="auto">
+                                                                    {filteredData[key].length}
+                                                                </Col>
+                                                            </Row>
+                                                        </Card.Body>    
+                                                    </Card>
+                                                </Col>
+                                            </Row>
+                                        )
 
-
-                            } */}
+                                    })
+                            }
                         
                         </Col>
                         <Col md={3} className="pe-auto">

@@ -2,6 +2,9 @@
   "name": "react-starter",
   "version": "1.0.0",
   "license": "MIT",
+  "entrypoints": [
+    "src/index.html"
+  ],
   "scripts": {
     "dev": "parcel src/index.html",
     "build": "parcel build src/index.html"
@@ -15,7 +18,7 @@
     "axios": "^1.4.0",
     "bootstrap": "^5.2.3",
     "country-iso-3-to-2": "^1.1.1",
-    "d3": "^7.8.4",
+    "d3": "^7.8.5",
     "leaflet": "^1.9.3",
     "react": "^18.2.0",
     "react-bootstrap": "^2.7.4",

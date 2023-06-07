@@ -1,23 +1,25 @@
 import React, { useEffect } from 'react';
 
-import * as d3 from 'd3';
+import { select } from "d3-selection";
+import { scaleLinear } from "d3-scale";
+import { max } from "d3-array";
 
 const BarChart = (props) => {
 
     useEffect(() => {
 
         const data = props.data;
-        const containerWidth = d3.select(".chart-" + props.chartid).node().getBoundingClientRect().width;
+        const containerWidth = select(".chart-" + props.chartid).node().getBoundingClientRect().width;
         const margin = { top: 0, right: 0, bottom: 0, left: 0 };
         const padding = 10;
         const width = containerWidth - margin.left - margin.right;
         const barHeight = 30;
 
-        const x = d3.scaleLinear()
-            .domain([0, d3.max(data, d => d.count) > 20 ? d3.max(data, d => d.count) : 20])
+        const x = scaleLinear()
+            .domain([0, max(data, d => d.count) > 20 ? d3.max(data, d => d.count) : 20])
             .range([0, width - 20]);
 
-        const chart = d3.select('.chart-' + props.chartid + ' svg')
+        const chart = select('.chart-' + props.chartid + ' svg')
             .attr("width", width)
             .attr("height", barHeight * data.length);
 
