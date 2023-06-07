@@ -11,185 +11,31 @@ body {
     font-family: 'Work Sans', sans-serif;
     font-weight: 300;
     font-size: 13px;
-    background: url('bg.webp') repeat;
     overflow-y: scroll;
 }
 
-body.bg {
-    background: url('bg.webp') repeat;
+
+.app {
+    font-family: "Work Sans", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #005450;
 }
 
-.policy-map {
-    height: 100vh; 
-    width: 100%;
-    position: relative;
+.app a {
+    color: #005450;
 }
 
-.map-container {
-    height: 100%; 
-    width: 100%; 
+.chip {
+    border-radius: 6px;
+    background-color: #eaf1f1;
+    color: #005450;
+    display: inline-block;
+    padding: 0.3em 0.5em;
+    font-size: 0.9em;
+    margin: 0 0.3em 0 0;
 }
 
-
-
-// Controls
-.controls-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 400;
-}
-
-.card-header {
-    font-size: 1.2em;
-    font-weight: 500;
-}
-
-.accordion-button:not(.collapsed) {
-    background-color: unset !important;
-    color: unset !important;
-}
-
-.accordion-button:focus {
-    outline: unset !important;
-    box-shadow: unset !important;
-}
-
-
-.accordion-button:focus {
-    box-shadow: none !important;
-}
-
-h2.accordion-header {
-    font-size: 1em;
-}
-
-.accordion-header button {
-    font-size: 1em;
-    padding: 0.8em;
-    color: #0d201f;
-}
-
-.accordion-header button svg {
-    margin-right: 1em;
-}
-
-
-.recently-published {
-    background-color: #f3f4f2;
-}
-
-.recently-published h4 {
-    color: #333;
-    font-size: 1em !important;
-}
-
-.policies-list-item h4 {
-    color: #333;
-    font-size: 1.2em !important;
-}
-
-.recently-published h4 a, .policies-list-item h4 a {
-    color: $primary;
+.table a {
     text-decoration: none;
 }
-
-.recently-published label, .policies-list-item label {
-    color: #999;
-    font-size: 1em;
-}
-
-.policy-country-label, .policy-area-label {
-    background: #f3f4f3;
-    display: inline-block;
-    padding: 0.2em 1em 0.2em 0.3em;
-    font-weight: 500;
-    border-radius: 3px;
-    margin: 0 0.5em 0.5em 0;
-}
-
-.policy-area-label {
-    background: #dee2e1;
-}
-
-
-
-.list-item-bg {
-    background-color: #f3f4f3;
-}
-
-.no-policies {
-    background-color: #f3f4f3;
-}
-
-// LEAFLET 
-
-.leaflet-tooltip {
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    text-align: center;
-}
-
-.country-label {
-    font-weight: 500;
-    font-size: 9px;
-}
-
-.policy-count {
-    background-color: #fff;
-    border: 1px solid #ccc;
-    text-align: center;
-    display: inline-block;
-    padding: 0 0.4em;
-}
-
-.leaflet-container {
-    background: transparent !important;
-}
-
-.leaflet-control-attribution {
-    display: none !important;
-}
-
-
-// ScrollAreas
-
-.scrollarea {
-    width: 100%;
-    overflow-x: hidden;
-    overflow-y: scroll;
-    padding: 0 20px 0 0;
-}
-
-.scrollarea::-webkit-scrollbar {
-    width: 6px;
-    transform: translateX(10px);
-}
-
-.scrollarea::-webkit-scrollbar-track {
-    border-radius: 5px;
-    background-color: #eee;
-}
-
-.scrollarea::-webkit-scrollbar-thumb {
-    border-radius: 5px;
-    background-color: #ccc;
-}
-
-.always-visible-popup {
-    visibility: visible !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-}
-
-.bar-chart-label, .bar-chart-value {
-    font-size: 1em;
-}
-
-// colors
-
-.bg-control-grey {
-    background-color: $control-grey;
-}
-

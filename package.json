@@ -1,6 +1,6 @@
 {
-  "name": "react-starter",
-  "version": "1.0.0",
+  "name": "aorai-research-repository",
+  "version": "0.5",
   "license": "MIT",
   "entrypoints": [
     "src/index.html"
@@ -13,18 +13,14 @@
   "dependencies": {
     "@mdi/js": "^7.2.96",
     "@mdi/react": "^1.6.1",
-    "airtable": "^0.12.1",
     "autoprefixer": "^10.4.14",
     "axios": "^1.4.0",
     "bootstrap": "^5.2.3",
     "country-iso-3-to-2": "^1.1.1",
-    "d3": "^7.8.5",
-    "leaflet": "^1.9.3",
     "react": "^18.2.0",
     "react-bootstrap": "^2.7.4",
     "react-country-flag": "^3.1.0",
     "react-dom": "^18.2.0",
-    "react-leaflet": "^4.2.1",
     "react-multi-select-component": "^4.3.4",
     "react-simple-animate": "^3.5.2"
   },
