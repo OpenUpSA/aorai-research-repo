@@ -4,7 +4,7 @@ import ReactDOMServer from 'react-dom/server';
 import axios from 'axios';
 
 import { Icon } from '@mdi/react';
-import { mdiFilterOutline, mdiCogOutline, mdiInformationSlabCircle } from '@mdi/js';
+import { mdiFilterOutline, mdiCogOutline, mdiInformationSlabCircle,mdiOpenInNew } from '@mdi/js';
 
 import { Card, Container, Row, Col, Accordion, Button, Form, Popover, OverlayTrigger } from 'react-bootstrap';
 import Spinner from 'react-bootstrap/Spinner';
@@ -630,7 +630,7 @@ function Map() {
                                                                         <Card.Body>
                                                                             <Row key={index} className="mb-2">
                                                                                 <Col>
-                                                                                    <h4><a href={item['External URL']} target="_blank">{item['English title'] ? item['English title'] : item['Original title']}</a></h4>
+                                                                                    <h4><a href={item['External URL']} target="_blank">{item['English title'] ? item['English title'] : item['Original title']} <Icon path={mdiOpenInNew} size={0.5} /></a></h4>
                                                                                 </Col>
                                                                                 <Col xs="auto" className="d-flex align-items-center fw-bold">
                                                                                     {
@@ -698,7 +698,6 @@ function Map() {
                                 showSection == 'list' &&
 
                                     Object.keys(filteredData).map((key,index)=>{
-                                        console.log(filteredData);
                                         return (
                                             <Row key={index}>
                                                 <Col>
@@ -722,8 +721,14 @@ function Map() {
                                                                         />
                                                                     </div>
                                                                 </Col>
-                                                                <Col>
-                                                                    <h4>{key}</h4>
+                                                                <Col className="d-flex align-items-center">
+                                                                    <h4 className="mb-0">{
+                                                                    allCountries.features.filter((country) => {
+                                                                        return country.id == key
+                                                                    })[0] != undefined ? allCountries.features.filter((country) => {
+                                                                        return country.id == key
+                                                                    })[0].properties.name : key
+                                                                    }</h4>
                                                                 </Col>
                                                                 <Col xs="auto">
                                                                     {filteredData[key].length}
