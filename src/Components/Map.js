@@ -162,7 +162,6 @@ function Map() {
 
     const getPolicyAreas = () => {
 
-        // Get POLICY AREAS data
         axios.get(api.base_url + '/Observatory AI policy areas', {
             headers: {
                 'xc-token': process.env.API_KEY
@@ -377,10 +376,7 @@ function Map() {
                                 lineHeight: '1.8em',
                             }} 
                         />
-                        </div>{feature.properties.name}
-                        {getPolicyCount(feature.id)}
-                        <BarChart data={activePolicyAreas} chartid={feature.id}/>
-
+                        </div>&nbsp;&nbsp;{feature.properties.name}
                 </>
             );
 
@@ -418,15 +414,7 @@ function Map() {
                 });
             }
         });
-
-
     }
-
-    
-
-
-
-
 
     return (
         
