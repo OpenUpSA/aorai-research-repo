@@ -19,7 +19,7 @@ import Popover from 'react-bootstrap/Popover';
 
 import { MultiSelect } from "react-multi-select-component";
 
-function truncateString = (str, n) => {
+const truncateString = (str, n) => {
     if (str.length > n) {
         return str.slice(0, n) + '...';
     } else {
