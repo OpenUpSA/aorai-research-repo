@@ -1,6 +1,6 @@
-# AORAI Policy Map
+# AORAI Research Repository
 
-The African Observatory on Responsible AI Policy Map 
+The African Observatory on Responsible AI Research Repository
 
 ## Install
 
