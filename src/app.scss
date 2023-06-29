@@ -36,6 +36,29 @@ body {
     margin: 0 0.3em 0 0;
 }
 
+a.chip {
+    text-decoration: none;
+}
+
 .table a {
     text-decoration: none;
+}
+
+.research-title {
+    font-weight: 600;
+    color: #005450;
+}
+
+.table-hover > tbody > tr:hover > * {
+    --bs-table-accent-bg: #f8f8f8 !important;
+}
+
+// Record modal
+
+dd {
+    margin-bottom: 1rem !important;
+}
+
+hr {
+    opacity: 0.1;
 }

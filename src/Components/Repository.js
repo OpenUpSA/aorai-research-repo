@@ -16,6 +16,7 @@ import Table from 'react-bootstrap/Table';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Tooltip from 'react-bootstrap/Tooltip';
 import Popover from 'react-bootstrap/Popover';
+import Modal from 'react-bootstrap/Modal';
 
 import { MultiSelect } from "react-multi-select-component";
 
@@ -30,7 +31,7 @@ const truncateString = (str, n) => {
 
 function Repository() {
     const api = {
-        base_url: 'https://nocodb.openup.org.za/api/v1/db/data/v1/AORAI'
+        base_url: 'https://nocodb.openup.org.za/api/v1/db/data/v1/AORAI2'
     }
     const [sectors, setSectors] = useState([]);
     const [selectedSectors, setSelectedSectors] = useState([]);
@@ -38,6 +39,8 @@ function Repository() {
     const [countries, setCountries] = useState([]);
     const [research, setResearch] = useState([]);
     const [search, setSearch] = useState('');
+    const [showModal, setShowModal] = useState(false);
+    const [modalData, setModalData] = useState({});
 
     useEffect(() => {
 
@@ -99,9 +102,9 @@ function Repository() {
         } else if (countryWhere != '' && sectorsWhere != '') {
             where = '(Country,isnot,null)~and' + countryWhere + '~and' + sectorsWhere + searchWhere;
         } else if (countryWhere == '' && sectorsWhere == '' && searchWhere == '') {
-            where = '(Country,isnot,null)';
+            where = '';
         } else {
-            where = '(Country,isnot,null)~and' + countryWhere + sectorsWhere + searchWhere;
+            where = countryWhere + sectorsWhere + searchWhere;
         }
 
         
@@ -134,6 +137,12 @@ function Repository() {
         setSelectedCountries(e);
     }
 
+    const showRecord = (record) => {
+        console.log(record);
+        setModalData(record);
+        setShowModal(true);
+    }
+
     useEffect(() => {
 
         getResearch(); 
@@ -141,8 +150,13 @@ function Repository() {
 
     }, [search]);
 
+    useEffect(() => {
+        countries.sort((a, b) => (a['Country name'] > b['Country name']) ? 1 : -1);
+    }, [countries]);
+
 
     return (
+        <>
         <Container className="py-5">
             <Row>
                 <Col>
@@ -176,6 +190,12 @@ function Repository() {
                         }
                     />
                 </Col>
+                {/* <Col md="auto">
+                    <Form.Select onChange={e => console.log(e)} id="sort">
+                        <option value="Original title">Sort By Title</option>
+                        <option value="Year published">Sort By Year</option>
+                    </Form.Select>
+                </Col> */}
                 <Col md="auto">
                     <Form.Select onChange={e => console.log(e)} id="sort">
                         <option value="Original title">Sort By Title</option>
@@ -191,20 +211,21 @@ function Repository() {
                                 <th>Resource</th>
                                 <th>Sectors</th>
                                 <th>Countries</th>
-                                <th>Years</th>
+                                <th>Type</th>
+                                <th>Year</th>
                             </tr>
                         </thead>
                         <tbody>
                             {
                                 research.map((record,index) => {
                                     return <tr key={index}>
-                                        <td width="55%">
+                                        <td width="45%">
                                             <Row>
-                                                <Col><a href={record['External URL']} target="_blank">{truncateString(record['Original title'], 70)}</a></Col>
+                                                <Col><span className="research-title" onClick={() => showRecord(record)}>{truncateString(record['Original title'], 70)}</span></Col>
                                                 <Col xs="auto">
                                                     <OverlayTrigger overlay={
-                                                        <Tooltip>
-                                                            {record['Short summary']}
+                                                        <Tooltip className="summary_tooltip">
+                                                            {truncateString(record['Original long summary'], 200)}
                                                         </Tooltip>
                                                     }>
                                                         <Icon color="#6c6d6d" path={mdiInformationSlabCircle} size={1} />
@@ -244,6 +265,11 @@ function Repository() {
                                         </td>
                                         <td>
                                             {
+                                                <span title={record['Research type']}>{truncateString(record['Research type'],25)}</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            {
                                                 record['Year published'].map((year, index) => {
                                                     return <div className="chip" key={index}>{year ? year['Year'] : ''}</div>
                                                 })
@@ -258,6 +284,89 @@ function Repository() {
                 </Col>
             </Row>
         </Container>
+        <Modal show={showModal} size="lg" onHide={() => setShowModal(false)}>
+            <Modal.Header closeButton></Modal.Header>
+            <Modal.Body>
+                <dl className="row">
+                    <dt className="col-sm-3">Original Title</dt>
+                    <dd className="col-sm-9"><span className="fs-5 fw-bold">{modalData['Original title']}</span></dd>
+                    <hr/>
+                    {modalData['English title'] && <>
+                        <dt className="col-sm-3">English Title</dt>
+                        <dd className="col-sm-9"><span className="fs-5 fw-bold">{modalData['English title']}</span></dd>
+                        <hr/>
+                    </>}
+                    {modalData['Research type'] && <>
+                        <dt className="col-sm-3">Research Type</dt>
+                        <dd className="col-sm-9">{modalData['Research type']}</dd>
+                        <hr/>
+                    </>}
+                    {(modalData['Authors'] && modalData['Authors'].length > 0) && <>
+                        <dt className="col-sm-3">Authors</dt>
+                        <dd className="col-sm-9">{modalData['Authors'].map((author,index) => {
+                            if(index > 0) { 
+                                return <span key={index}>, {author['Full name']}</span>
+                            } else {
+                                return <span key={index}>{author['Full name']}</span>
+                            }
+
+                        })}</dd>
+                        <hr/>
+                    </>}
+                    {(modalData['Country'] && modalData['Country'].length > 0) && <>
+                        <dt className="col-sm-3">Countries</dt>
+                        <dd className="col-sm-9">{modalData['Country'].map((country, index) => {
+                            return <div className="chip" key={index}>{country ? <>
+                                <div style={{width: '1.4em', height: '1.4em', borderRadius: '50%', overflow: 'hidden', position: 'relative', display: 'inline-block', top: '3px', backgroundColor: '#ccc'}} className="border">
+                                    <ReactCountryFlag 
+                                        countryCode={getCountryISO2(country['Country code'])}
+                                        svg
+                                        style={{
+                                            position: 'absolute', 
+                                            top: '30%',
+                                            left: '30%',
+                                            marginTop: '-50%',
+                                            marginLeft: '-50%',
+                                            fontSize: '1.8em',
+                                            lineHeight: '1.8em',
+                                        }} 
+                                    />
+                                </div> {country['Country name']}</> : ''}</div>
+
+                        })}</dd>
+                        <hr/>
+                    </>}
+                    {(modalData['Regional grouping - geo'] && modalData['Regional grouping - geo'].length > 0) && <>
+                        <dt className="col-sm-3">Region</dt>
+                        <dd className="col-sm-9">{modalData['Regional grouping - geo'].map((author,index) => {
+                            if(index > 0) { 
+                                return <span>, {author['Region name']}</span>
+                            } else {
+                                return <span>{author['Region name']}</span>
+                            }
+
+                        })}</dd>
+                        <hr/>
+                    </>}
+                    <dt className="col-sm-3">Links</dt>
+                    <dd className="col-sm-9">
+                        {modalData['External URL'] != '' && <a target="_blank" href={modalData['External URL']} className="chip">External Link</a>}
+                        {(modalData['Attachment'] && modalData['Attachment'].length > 0) && modalData['Attachment'].map((attachment, index) => {
+                            return <a target="_blank" href={'https://nocodb.openup.org.za/' + attachment.path} className="chip">Attachment</a>
+
+                        })
+                        } 
+                    </dd>
+                    <hr/>
+                    {modalData['Original long summary'] && <>
+                        <dt className="col-sm-3">Summary</dt>
+                        <dd className="col-sm-9">{truncateString(modalData['Original long summary'], 700)}</dd>
+                    </>}
+                </dl>
+                
+            </Modal.Body>
+        </Modal>
+        </>
     )
 
 }
