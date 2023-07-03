@@ -6,7 +6,7 @@ import getCountryISO2 from 'country-iso-3-to-2';
 import ReactCountryFlag from 'react-country-flag';
 
 import { Icon } from '@mdi/react';
-import {  mdiInformationSlabCircle } from '@mdi/js';
+import {  mdiInformationSlabCircle, mdiSortAlphabeticalAscending, mdiSortAlphabeticalDescending } from '@mdi/js';
 
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
@@ -38,7 +38,27 @@ function Repository() {
     const [selectedCountries, setSelectedCountries] = useState([]);
     const [countries, setCountries] = useState([]);
     const [research, setResearch] = useState([]);
+    const [researchTypes, setResearchTypes] = useState([
+        {
+            name: 'Technology development and applications',
+            value: 'Technology development and applications'
+        },
+        {
+            name: 'Public policy and ethics',
+            value: 'Public policy and ethics'
+        },
+        {
+            name: 'Business and commercial',
+            value: 'Business and commercial'
+        },
+        {
+            name: 'Mixed',
+            value: 'Mixed'
+        }
+    ]);
+    const [selectedResearchTypes, setSelectedResearchTypes] = useState([]);
     const [search, setSearch] = useState('');
+    const [sort, setSort] = useState('Original title');
     const [showModal, setShowModal] = useState(false);
     const [modalData, setModalData] = useState({});
 
@@ -54,7 +74,7 @@ function Repository() {
 
         getResearch();
 
-    }, [selectedSectors, selectedCountries]);
+    }, [selectedSectors, selectedCountries, selectedResearchTypes, sort, search]);
 
 
 
@@ -84,34 +104,33 @@ function Repository() {
         let countryWhere = '';
         let sectorsWhere = '';
         let searchWhere = '';
+        let researchTypeWhere = '';
+        let whereClauses = [];
 
         if(selectedCountries.length) {
             countryWhere = '(Country,in,' + selectedCountries.map(country => country.label).join(',') + ')';
+            whereClauses.push(countryWhere);
         }
         if (selectedSectors.length) {
             sectorsWhere = '(Sectors,in,' + selectedSectors.map(sector => sector.label).join(',') + ')';
+            whereClauses.push(sectorsWhere);
+        }
+        if (selectedResearchTypes.length) {
+            researchTypeWhere = '(Research type,in,' + selectedResearchTypes.map(researchType => researchType.value).join(',') + ')';
+            whereClauses.push(researchTypeWhere);
         }
         if (search != '') {
             searchWhere = '(Original title,like,%' + search + '%)';
+            whereClauses.push(searchWhere);
         }
 
+        let where = whereClauses.join('~and');
 
-        let where = '';
-        if (countryWhere != '' && sectorsWhere != '' && searchWhere != '') {
-            where = '(Country,isnot,null)~and' + countryWhere + '~and' + sectorsWhere + '~and' + searchWhere;
-        } else if (countryWhere != '' && sectorsWhere != '') {
-            where = '(Country,isnot,null)~and' + countryWhere + '~and' + sectorsWhere + searchWhere;
-        } else if (countryWhere == '' && sectorsWhere == '' && searchWhere == '') {
-            where = '';
-        } else {
-            where = countryWhere + sectorsWhere + searchWhere;
-        }
-
-        
         let params = {
             limit: 250,
             'nested[Country][fields]': 'Country name,Country code',
-            where: where
+            where: where,
+            sort: sort
         }
 
 
@@ -121,9 +140,7 @@ function Repository() {
             },
             params: params
         }).then(function(response) {
-
             setResearch(response.data.list);
-
         }).catch(function(error) {
             console.log(error);
         });
@@ -137,18 +154,25 @@ function Repository() {
         setSelectedCountries(e);
     }
 
+    const selectResearchTypes = (e) => {
+        setSelectedResearchTypes(e);
+    }
+
     const showRecord = (record) => {
-        console.log(record);
         setModalData(record);
         setShowModal(true);
     }
 
-    useEffect(() => {
+    const sortBy = (col) => {
+        if(sort === col) {
+            col = '-' + col;
+        }
+        setSort(col);
+    }
 
-        getResearch(); 
-
-
-    }, [search]);
+    // useEffect(() => {
+    //     getResearch(); 
+    // }, [search]);
 
     useEffect(() => {
         countries.sort((a, b) => (a['Country name'] > b['Country name']) ? 1 : -1);
@@ -190,38 +214,50 @@ function Repository() {
                         }
                     />
                 </Col>
-                {/* <Col md="auto">
-                    <Form.Select onChange={e => console.log(e)} id="sort">
-                        <option value="Original title">Sort By Title</option>
-                        <option value="Year published">Sort By Year</option>
-                    </Form.Select>
-                </Col> */}
-                <Col md="auto">
-                    <Form.Select onChange={e => console.log(e)} id="sort">
-                        <option value="Original title">Sort By Title</option>
-                        <option value="Year published">Sort By Year</option>
-                    </Form.Select>
+                <Col md={3}>
+                    <MultiSelect
+                        options={researchTypes.map(type => { return { label: type.name, value: type.value } })}
+                        value={selectedResearchTypes}
+                        onChange={e => selectResearchTypes(e) }
+                        valueRenderer={
+                            (selected, _options) => {
+                                return selected.length
+                                  ? selected.length + " Research Types Selected"
+                                  : "Research Types";
+                            }
+                        }
+                    />
                 </Col>
+              
+                
             </Row>
             <Row>
                 <Col>
                     <Table hover className="mt-4">
                         <thead>
                             <tr>
-                                <th>Resource</th>
+                                <th onClick={() => sortBy('Original title')} className="cursor-pointer">
+                                    <Row>
+                                        <Col>Resource</Col>
+                                        <Col xs="auto">
+                                            <Icon color="#6c6d6d" path={sort.includes('-') ? mdiSortAlphabeticalDescending : mdiSortAlphabeticalAscending} size={0.8} />
+                                        </Col>
+                                    </Row>
+                                    
+                                </th>
                                 <th>Sectors</th>
                                 <th>Countries</th>
-                                <th>Type</th>
+                                <th onClick={() => sortBy('Research type')}>Type</th>
                                 <th>Year</th>
                             </tr>
                         </thead>
                         <tbody>
                             {
                                 research.map((record,index) => {
-                                    return <tr key={index}>
+                                    return <tr key={index} onClick={() => showRecord(record)} className="research-item">
                                         <td width="45%">
                                             <Row>
-                                                <Col><span className="research-title" onClick={() => showRecord(record)}>{truncateString(record['Original title'], 70)}</span></Col>
+                                                <Col><span className="research-title" title={record['Original title']}>{truncateString(record['Original title'], 70)}</span></Col>
                                                 <Col xs="auto">
                                                     <OverlayTrigger overlay={
                                                         <Tooltip className="summary_tooltip">
@@ -352,7 +388,7 @@ function Repository() {
                     <dd className="col-sm-9">
                         {modalData['External URL'] != '' && <a target="_blank" href={modalData['External URL']} className="chip">External Link</a>}
                         {(modalData['Attachment'] && modalData['Attachment'].length > 0) && modalData['Attachment'].map((attachment, index) => {
-                            return <a target="_blank" href={'https://nocodb.openup.org.za/' + attachment.path} className="chip">Attachment</a>
+                            return <a key={index} target="_blank" href={'https://nocodb.openup.org.za/' + attachment.path} className="chip">Attachment</a>
 
                         })
                         } 

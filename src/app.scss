@@ -44,6 +44,10 @@ a.chip {
     text-decoration: none;
 }
 
+.research-item {
+    cursor: pointer;
+}
+
 .research-title {
     font-weight: 600;
     color: #005450;
@@ -51,6 +55,10 @@ a.chip {
 
 .table-hover > tbody > tr:hover > * {
     --bs-table-accent-bg: #f8f8f8 !important;
+}
+
+.cursor-pointer {
+    cursor: pointer;
 }
 
 // Record modal
