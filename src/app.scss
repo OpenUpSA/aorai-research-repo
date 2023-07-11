@@ -61,6 +61,46 @@ a.chip {
     cursor: pointer;
 }
 
+.nav-link {
+    font-weight: bold;
+    font-size: 16px;
+    margin: 0 0 0 1em;
+
+    &:hover {
+        color: #00d553;
+    }
+}
+
+.offcanvas.show {
+    background-color: #005450;
+    padding: 2em 0;
+}
+
+.offcanvas-header .btn-close {
+    color: #fff !important;
+}
+
+.offcanvas.show .nav-link {
+    color: #fff !important;
+}
+
+.offcanvas-header button {
+    opacity: 1;
+    background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e");
+    width: 0.5em;
+    height: 0.5em;
+}
+
+.offcanvas.show .offcanvas-body {
+    text-align: center;
+}
+
+.select-dropdown .separator {
+    height: 1px;
+    background-color: #ccc;
+    margin: 4px 0;
+  }
+
 // Record modal
 
 dd {

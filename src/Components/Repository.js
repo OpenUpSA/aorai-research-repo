@@ -36,7 +36,9 @@ function Repository() {
     const [sectors, setSectors] = useState([]);
     const [selectedSectors, setSelectedSectors] = useState([]);
     const [selectedCountries, setSelectedCountries] = useState([]);
+    const [selectedRegions, setSelectedRegions] = useState([]);
     const [countries, setCountries] = useState([]);
+    const [regions, setRegions] = useState([]);
     const [research, setResearch] = useState([]);
     const [researchTypes, setResearchTypes] = useState([
         {
@@ -65,6 +67,8 @@ function Repository() {
     useEffect(() => {
 
         getRecords('Country', { limit: 250 });
+        getRecords('Regional grouping - geo', { limit: 250, where: '(Country,isnot,null)', 'nested[Country][fields]': 'Country name,Country code', });
+        getRecords('Regional grouping - income', { limit: 250, where: '(Country,isnot,null)', 'nested[Country][fields]': 'Country name,Country code', });
         getRecords('Sectors', { limit: 250 });
         getResearch();
 
@@ -75,7 +79,6 @@ function Repository() {
         getResearch();
 
     }, [selectedSectors, selectedCountries, selectedResearchTypes, sort, search]);
-
 
 
     const getRecords = (table, params) => {
@@ -91,6 +94,10 @@ function Repository() {
                 setCountries(response.data.list);
             } else if(table === 'Sectors') {
                 setSectors(response.data.list);
+            } else if(table === 'Regional grouping - geo') {
+                setRegions(response.data.list);
+            } else if(table === 'Regional grouping - income') {
+                setRegions(regions.concat(response.data.list));
             }
 
         }).catch(function(error) {
@@ -105,6 +112,7 @@ function Repository() {
         let sectorsWhere = '';
         let searchWhere = '';
         let researchTypeWhere = '';
+        let publish_to_website = true;
         let whereClauses = [];
 
         if(selectedCountries.length) {
@@ -122,6 +130,11 @@ function Repository() {
         if (search != '') {
             searchWhere = '(Original title,like,%' + search + '%)';
             whereClauses.push(searchWhere);
+        }
+
+        if (publish_to_website) {
+            let publish = '(Analysis status,eq,Publish to website)';
+            whereClauses.push(publish);
         }
 
         let where = whereClauses.join('~and');
@@ -154,6 +167,10 @@ function Repository() {
         setSelectedCountries(e);
     }
 
+    const selectRegions = (e) => {
+        setSelectedRegions(e);
+    }
+
     const selectResearchTypes = (e) => {
         setSelectedResearchTypes(e);
     }
@@ -170,13 +187,32 @@ function Repository() {
         setSort(col);
     }
 
-    // useEffect(() => {
-    //     getResearch(); 
-    // }, [search]);
-
     useEffect(() => {
         countries.sort((a, b) => (a['Country name'] > b['Country name']) ? 1 : -1);
     }, [countries]);
+
+    useEffect(() => {
+        
+        let regionCountries = [];
+        selectedRegions.forEach(region => {
+            let currentRegion = regions.filter(regionCountry => regionCountry['Region name'] === region.label);
+
+            console.log(currentRegion);
+
+            if(currentRegion.length) {
+                let currentRegionCountries = currentRegion[0]['Country'].map(country => {
+                    return { label: country['Country name'], value: country['Country code'] }
+                })
+                regionCountries = regionCountries.concat(currentRegionCountries);
+            }
+
+
+
+
+        });
+        setSelectedCountries(regionCountries);
+    
+    }, [selectedRegions]);
 
 
     return (
@@ -186,7 +222,7 @@ function Repository() {
                 <Col>
                     <Form.Control type="search" placeholder="Search for a keyword..." onKeyUp={ e => setSearch(e.target.value) }/>
                 </Col>
-                <Col md={3}>
+                <Col md={2}>
                     <MultiSelect
                         options={sectors.map(sector => { return { label: sector['Sector'], value: sector['Sector'] } })}
                         value={selectedSectors}
@@ -200,7 +236,7 @@ function Repository() {
                         }
                     />
                 </Col>
-                <Col md={3}>
+                <Col md={2}>
                     <MultiSelect
                         options={countries.map(country => { return { label: country['Country name'], value: country['Country code'] } })}
                         value={selectedCountries}
@@ -212,9 +248,22 @@ function Repository() {
                                   : "Countries";
                             }
                         }
+                        optionRenderer={(option) => (
+                            <React.Fragment>
+                                {option.label === '---' ? <div className="separator" /> : option.label}
+                            </React.Fragment>
+                        )}
                     />
                 </Col>
-                <Col md={3}>
+                <Col md={2}>
+                    <MultiSelect
+                        options={regions.map(region => { return { label: region['Region name'], value: region['Region name'] } })}
+                        value={selectedRegions}
+                        onChange={e => selectRegions(e) }
+                    />
+                </Col>        
+
+                <Col md={2}>
                     <MultiSelect
                         options={researchTypes.map(type => { return { label: type.name, value: type.value } })}
                         value={selectedResearchTypes}
@@ -233,21 +282,17 @@ function Repository() {
             </Row>
             <Row>
                 <Col>
-                    <Table hover className="mt-4">
+                    <Table hover className="mt-4" responsive>
                         <thead>
                             <tr>
-                                <th onClick={() => sortBy('Original title')} className="cursor-pointer">
+                                <th onClick={() => sortBy('Original title')} className="cursor-pointer" style={{ minWidth: '300px' }}>
                                     <Row>
-                                        <Col>Resource</Col>
-                                        <Col xs="auto">
-                                            <Icon color="#6c6d6d" path={sort.includes('-') ? mdiSortAlphabeticalDescending : mdiSortAlphabeticalAscending} size={0.8} />
-                                        </Col>
+                                        <Col>Resource <Icon color="#6c6d6d" path={sort.includes('-') ? mdiSortAlphabeticalDescending : mdiSortAlphabeticalAscending} size={0.8} /></Col>
                                     </Row>
-                                    
                                 </th>
-                                <th>Sectors</th>
-                                <th>Countries</th>
-                                <th onClick={() => sortBy('Research type')}>Type</th>
+                                <th style={{ minWidth: '250px' }}>Sectors</th>
+                                <th style={{ minWidth: '150px' }}>Countries</th>
+                                <th onClick={() => sortBy('Research type')} style={{ minWidth: '200px' }}>Research Type</th>
                                 <th>Year</th>
                             </tr>
                         </thead>
@@ -273,29 +318,62 @@ function Repository() {
                                         <td>
                                             {
                                                 record['Sectors'].map((sector, index) => {
-                                                    return <div className="chip" key={index}>{sector ? sector['Sector'] : ''}</div>
+
+                                                    if(index < 2) {
+                                                        return <div className="chip" key={index}>{sector ? sector['Sector'] : ''}</div>
+                                                    }
+
+                                                    if(record['Sectors'].length > 2) {
+                                                        return <OverlayTrigger overlay={<Tooltip className="summary_tooltip">
+                                                            {
+                                                                record['Sectors'].map((country, index) => {
+                                                                    return index > 1 && sector['Sector']     
+                                                                })
+                                                            }
+                                                        </Tooltip>}>
+                                                            <div className="chip">...</div>
+                                                        </OverlayTrigger>
+                                                    }
                                                 })
                                             }
                                         </td>
                                         <td>
                                             {
                                                 record['Country'].map((country, index) => {
-                                                    return <div className="chip" key={index}>{country ? <>
-                                                    <div style={{width: '1.4em', height: '1.4em', borderRadius: '50%', overflow: 'hidden', position: 'relative', display: 'inline-block', top: '5px', backgroundColor: '#ccc'}} className="border">
-                                                        <ReactCountryFlag 
-                                                            countryCode={getCountryISO2(country['Country code'])}
-                                                            svg
-                                                            style={{
-                                                                position: 'absolute', 
-                                                                top: '30%',
-                                                                left: '30%',
-                                                                marginTop: '-50%',
-                                                                marginLeft: '-50%',
-                                                                fontSize: '1.8em',
-                                                                lineHeight: '1.8em',
-                                                            }} 
-                                                        />
-                                                    </div>{country['Country name']}</> : ''}</div>
+                                                    
+                                                    if(index < 2) {
+                                                    
+                                                        return <div className="chip" key={index}>{country ? <>
+                                                            <div style={{width: '1.4em', height: '1.4em', borderRadius: '50%', overflow: 'hidden', position: 'relative', display: 'inline-block', top: '5px', backgroundColor: '#ccc'}} className="border">
+                                                                <ReactCountryFlag 
+                                                                    countryCode={getCountryISO2(country['Country code'])}
+                                                                    svg
+                                                                    style={{
+                                                                        position: 'absolute', 
+                                                                        top: '30%',
+                                                                        left: '30%',
+                                                                        marginTop: '-50%',
+                                                                        marginLeft: '-50%',
+                                                                        fontSize: '1.8em',
+                                                                        lineHeight: '1.8em',
+                                                                    }} 
+                                                                />
+                                                            </div>{country['Country name']}</> : ''}
+                                                        </div>
+                                                    }
+                                                    
+                                                    if(record['Country'].length > 2) {
+                                                        return <OverlayTrigger overlay={<Tooltip className="summary_tooltip">
+                                                            {
+                                                                record['Country'].map((country, index) => {
+                                                                    return index > 1 && country['Country name']     
+                                                                })
+                                                            }
+                                                        </Tooltip>}>
+                                                            <div className="chip">...</div>
+                                                        </OverlayTrigger>
+                                                    }
+                                                    
                                                 })
                                             }
                                         </td>

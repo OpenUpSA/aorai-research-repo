@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
+import Header from './Components/Header';
 import Repository from './Components/Repository';
 
 import './app.scss';
@@ -12,6 +13,7 @@ function App() {
 	// <button onClick={() => setCounter(counter + 1)}>Increment</button>
 	return(
 		<div>
+			<Header />
 			<Repository />
 		</div>
 	)
