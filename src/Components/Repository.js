@@ -415,10 +415,38 @@ function Repository() {
                         })}</dd>
                         <hr/>
                     </>}
+                    {
+                        (modalData['Year published'] && modalData['Year published'].length > 0) && <>
+                            <dt className="col-sm-3">Published</dt>
+                            <dd className="col-sm-9">
+                            {
+                                modalData['Year published'].map((year, index) => {
+                                    return <div className="chip" key={index}>{year ? year['Year'] : ''}</div>
+                                })
+                            }
+                            </dd>
+                            <hr/>
+                            </>
+                    }
+                    {
+                        (modalData['Sectors'] && modalData['Sectors'].length > 0) && <>
+                            <dt className="col-sm-3">Sectors</dt>
+                            <dd className="col-sm-9">
+                            {
+                                modalData['Sectors'].map((sector, index) => {
+                                    return <div className="chip" key={index}>{sector ? sector['Sector'] : ''}</div>
+                                })
+                            }
+                            </dd>
+                            <hr/>
+                            </>
+                    }
                     {((modalData['Country'] && modalData['Country'].length > 0) || (modalData['Regional grouping - geo'] && modalData['Regional grouping - geo'].length > 0) || (modalData['Regional grouping - income'] && modalData['Regional grouping - income'].length > 0)) && <>
                         <dt className="col-sm-3">Countries/Regions</dt>
                         <dd className="col-sm-9">{modalData['Country'].concat(modalData['Regional grouping - geo']).concat(modalData['Regional grouping - income']).map((cntryreg, index) => {
-                            return <div className="chip" key={index}>{cntryreg ? 
+                            
+                            return cntryreg != null &&
+                            <div className="chip" key={index}>{cntryreg ? 
                                 <>
                                     {
                                         cntryreg['Country name'] ? 
