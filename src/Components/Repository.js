@@ -36,7 +36,6 @@ function Repository() {
     const [sectors, setSectors] = useState([]);
     const [selectedSectors, setSelectedSectors] = useState([]);
     const [selectedCountries, setSelectedCountries] = useState([]);
-    const [selectedRegions, setSelectedRegions] = useState([]);
     const [countries, setCountries] = useState([]);
     const [regions, setRegions] = useState([]);
     const [research, setResearch] = useState([]);
@@ -67,8 +66,8 @@ function Repository() {
     useEffect(() => {
 
         getRecords('Country', { limit: 250 });
-        getRecords('Regional grouping - geo', { limit: 250, where: '(Country,isnot,null)', 'nested[Country][fields]': 'Country name,Country code', });
-        getRecords('Regional grouping - income', { limit: 250, where: '(Country,isnot,null)', 'nested[Country][fields]': 'Country name,Country code', });
+        getRecords('Regional grouping - geo', { limit: 250 });
+        getRecords('Regional grouping - income', { limit: 250 });
         getRecords('Sectors', { limit: 250 });
         getResearch();
 
@@ -116,7 +115,7 @@ function Repository() {
         let whereClauses = [];
 
         if(selectedCountries.length) {
-            countryWhere = '(Country,in,' + selectedCountries.map(country => country.label).join(',') + ')';
+            countryWhere = '(Country,in,' + selectedCountries.map(country => country.label).join(',') + ')~or(Regional grouping - geo,in,' + selectedCountries.map(country => country.label).join(',') + ')~or(Regional grouping - income,in,' + selectedCountries.map(country => country.label).join(',') + '))';
             whereClauses.push(countryWhere);
         }
         if (selectedSectors.length) {
@@ -146,7 +145,6 @@ function Repository() {
             sort: sort
         }
 
-
         axios.get(api.base_url + '/Research Directory', {
             headers: {
                 'xc-token': process.env.API_KEY
@@ -167,10 +165,6 @@ function Repository() {
         setSelectedCountries(e);
     }
 
-    const selectRegions = (e) => {
-        setSelectedRegions(e);
-    }
-
     const selectResearchTypes = (e) => {
         setSelectedResearchTypes(e);
     }
@@ -188,41 +182,36 @@ function Repository() {
     }
 
     useEffect(() => {
+        
         countries.sort((a, b) => (a['Country name'] > b['Country name']) ? 1 : -1);
+
     }, [countries]);
 
-    useEffect(() => {
-        
-        let regionCountries = [];
-        selectedRegions.forEach(region => {
-            let currentRegion = regions.filter(regionCountry => regionCountry['Region name'] === region.label);
-
-            console.log(currentRegion);
-
-            if(currentRegion.length) {
-                let currentRegionCountries = currentRegion[0]['Country'].map(country => {
-                    return { label: country['Country name'], value: country['Country code'] }
-                })
-                regionCountries = regionCountries.concat(currentRegionCountries);
-            }
-
-
-
-
-        });
-        setSelectedCountries(regionCountries);
+    const ItemRenderer = ({ checked, option, onClick, disabled }) => {
+        if (option.value === 'Regions' || option.value === 'Countries') {
+          return <div className="fw-bold fs-6">{option.label}</div>;
+        } else {
+          return (
+            <label>
+              <input type="checkbox" onChange={onClick} checked={checked} tabIndex={-1} disabled={disabled} /> {option.label}
+            </label>
+          );
+        }
+    };
     
-    }, [selectedRegions]);
-
-
     return (
         <>
         <Container className="py-5">
+            <Row className="mb-3">
+                <Col>
+                    <h1 className="fs-4">Research Directory</h1>
+                </Col>
+            </Row>
             <Row>
                 <Col>
                     <Form.Control type="search" placeholder="Search for a keyword..." onKeyUp={ e => setSearch(e.target.value) }/>
                 </Col>
-                <Col md={2}>
+                <Col md={3}>
                     <MultiSelect
                         options={sectors.map(sector => { return { label: sector['Sector'], value: sector['Sector'] } })}
                         value={selectedSectors}
@@ -236,32 +225,22 @@ function Repository() {
                         }
                     />
                 </Col>
-                <Col md={2}>
+                <Col md={3}>
                     <MultiSelect
-                        options={countries.map(country => { return { label: country['Country name'], value: country['Country code'] } })}
+                        options={[{'Country name': 'Regions', 'Country code': 'Regions'}].concat(regions).concat([{'Country name': 'Countries', 'Country code': 'Countries'}]).concat(countries).map(cntryreg => { return { label: cntryreg['Country name'] ? cntryreg['Country name'] : cntryreg['Region name'], value: cntryreg['Country code'] ? cntryreg['Country code'] : cntryreg['Region name'], disabled: (cntryreg['Country name'] == 'Regions' || cntryreg['Country name'] == 'Countries') ? true : false } })}
                         value={selectedCountries}
                         onChange={e => selectCountries(e) }
                         valueRenderer={
                             (selected, _options) => {
                                 return selected.length
-                                  ? selected.length + " Countries Selected"
-                                  : "Countries";
+                                  ? selected.length + " Selected"
+                                  : "Countries and Regions";
                             }
                         }
-                        optionRenderer={(option) => (
-                            <React.Fragment>
-                                {option.label === '---' ? <div className="separator" /> : option.label}
-                            </React.Fragment>
-                        )}
+                        ItemRenderer={ItemRenderer}
                     />
                 </Col>
-                <Col md={2}>
-                    <MultiSelect
-                        options={regions.map(region => { return { label: region['Region name'], value: region['Region name'] } })}
-                        value={selectedRegions}
-                        onChange={e => selectRegions(e) }
-                    />
-                </Col>        
+                
 
                 <Col md={2}>
                     <MultiSelect
@@ -339,34 +318,43 @@ function Repository() {
                                         </td>
                                         <td>
                                             {
-                                                record['Country'].map((country, index) => {
+                                                record['Country'].concat(record['Regional grouping - geo']).concat(record['Regional grouping - income']).map((cntryreg, index) => {
                                                     
-                                                    if(index < 2) {
-                                                    
-                                                        return <div className="chip" key={index}>{country ? <>
-                                                            <div style={{width: '1.4em', height: '1.4em', borderRadius: '50%', overflow: 'hidden', position: 'relative', display: 'inline-block', top: '5px', backgroundColor: '#ccc'}} className="border">
-                                                                <ReactCountryFlag 
-                                                                    countryCode={getCountryISO2(country['Country code'])}
-                                                                    svg
-                                                                    style={{
-                                                                        position: 'absolute', 
-                                                                        top: '30%',
-                                                                        left: '30%',
-                                                                        marginTop: '-50%',
-                                                                        marginLeft: '-50%',
-                                                                        fontSize: '1.8em',
-                                                                        lineHeight: '1.8em',
-                                                                    }} 
-                                                                />
-                                                            </div>{country['Country name']}</> : ''}
+                                                    if(index < 2 && cntryreg != null) {
+                                                        return <div className="chip" key={index}>{cntryreg ? 
+                                                            <>
+                                                                {
+                                                                    cntryreg['Country name'] ? 
+                                                                        <>
+                                                                            <div style={{width: '1.4em', height: '1.4em', borderRadius: '50%', overflow: 'hidden', position: 'relative', display: 'inline-block', top: '3px', backgroundColor: '#ccc'}} className="border">
+                                                                                <ReactCountryFlag 
+                                                                                    countryCode={getCountryISO2(cntryreg['Country code'])}
+                                                                                    svg
+                                                                                    style={{
+                                                                                        position: 'absolute', 
+                                                                                        top: '30%',
+                                                                                        left: '30%',
+                                                                                        marginTop: '-50%',
+                                                                                        marginLeft: '-50%',
+                                                                                        fontSize: '1.8em',
+                                                                                        lineHeight: '1.8em',
+                                                                                    }} 
+                                                                                />
+                                                                            </div> {cntryreg['Country name']}
+                                                                        </> 
+                                                                    : <div>{cntryreg['Region name']}</div>
+                                                                }
+                                                            </> : ''}
                                                         </div>
+
                                                     }
                                                     
-                                                    if(record['Country'].length > 2) {
+                                                    if(record['Country'].concat(record['Regional grouping - geo']).concat(record['Regional grouping - income']).length > 3) {
+                                                        
                                                         return <OverlayTrigger overlay={<Tooltip className="summary_tooltip">
                                                             {
-                                                                record['Country'].map((country, index) => {
-                                                                    return index > 1 && country['Country name']     
+                                                                record['Country'].concat(record['Regional grouping - geo']).concat(record['Regional grouping - income']).map((cntryreg, index) => {
+                                                                    return index > 1 && cntryreg != null && (cntryreg['Country name'] ? cntryreg['Country name'] : cntryreg['Region name']);
                                                                 })
                                                             }
                                                         </Tooltip>}>
@@ -427,41 +415,38 @@ function Repository() {
                         })}</dd>
                         <hr/>
                     </>}
-                    {(modalData['Country'] && modalData['Country'].length > 0) && <>
-                        <dt className="col-sm-3">Countries</dt>
-                        <dd className="col-sm-9">{modalData['Country'].map((country, index) => {
-                            return <div className="chip" key={index}>{country ? <>
-                                <div style={{width: '1.4em', height: '1.4em', borderRadius: '50%', overflow: 'hidden', position: 'relative', display: 'inline-block', top: '3px', backgroundColor: '#ccc'}} className="border">
-                                    <ReactCountryFlag 
-                                        countryCode={getCountryISO2(country['Country code'])}
-                                        svg
-                                        style={{
-                                            position: 'absolute', 
-                                            top: '30%',
-                                            left: '30%',
-                                            marginTop: '-50%',
-                                            marginLeft: '-50%',
-                                            fontSize: '1.8em',
-                                            lineHeight: '1.8em',
-                                        }} 
-                                    />
-                                </div> {country['Country name']}</> : ''}</div>
-
+                    {((modalData['Country'] && modalData['Country'].length > 0) || (modalData['Regional grouping - geo'] && modalData['Regional grouping - geo'].length > 0) || (modalData['Regional grouping - income'] && modalData['Regional grouping - income'].length > 0)) && <>
+                        <dt className="col-sm-3">Countries/Regions</dt>
+                        <dd className="col-sm-9">{modalData['Country'].concat(modalData['Regional grouping - geo']).concat(modalData['Regional grouping - income']).map((cntryreg, index) => {
+                            return <div className="chip" key={index}>{cntryreg ? 
+                                <>
+                                    {
+                                        cntryreg['Country name'] ? 
+                                            <>
+                                                <div style={{width: '1.4em', height: '1.4em', borderRadius: '50%', overflow: 'hidden', position: 'relative', display: 'inline-block', top: '3px', backgroundColor: '#ccc'}} className="border">
+                                                    <ReactCountryFlag 
+                                                        countryCode={getCountryISO2(cntryreg['Country code'])}
+                                                        svg
+                                                        style={{
+                                                            position: 'absolute', 
+                                                            top: '30%',
+                                                            left: '30%',
+                                                            marginTop: '-50%',
+                                                            marginLeft: '-50%',
+                                                            fontSize: '1.8em',
+                                                            lineHeight: '1.8em',
+                                                        }} 
+                                                    />
+                                                </div> {cntryreg['Country name']}
+                                            </> 
+                                        : <div>{cntryreg['Region name']}</div>
+                                    }
+                                </> : ''}
+                            </div>
                         })}</dd>
                         <hr/>
                     </>}
-                    {(modalData['Regional grouping - geo'] && modalData['Regional grouping - geo'].length > 0) && <>
-                        <dt className="col-sm-3">Region</dt>
-                        <dd className="col-sm-9">{modalData['Regional grouping - geo'].map((author,index) => {
-                            if(index > 0) { 
-                                return <span>, {author['Region name']}</span>
-                            } else {
-                                return <span>{author['Region name']}</span>
-                            }
-
-                        })}</dd>
-                        <hr/>
-                    </>}
+                    
                     <dt className="col-sm-3">Links</dt>
                     <dd className="col-sm-9">
                         {modalData['External URL'] != '' && <a target="_blank" href={modalData['External URL']} className="chip">External Link</a>}
