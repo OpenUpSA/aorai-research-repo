@@ -95,6 +95,12 @@ a.chip {
     text-align: center;
 }
 
+.rmsc .dropdown-container:focus-within {
+    border-color: #80aaa8 !important;
+    outline: 0 !important;
+    box-shadow: 0 0 0 0.1rem #00545040 !important;
+}
+
 .select-dropdown .separator {
     height: 1px;
     background-color: #ccc;
